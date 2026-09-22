@@ -12,7 +12,11 @@ import type { BoardTheme } from "../../kicad";
 import * as kicad_common from "../../kicad/common";
 import * as board_items from "../../kicad/board";
 import { DocumentViewer } from "../base/document-viewer";
-import { LayoutAnimationController, LayoutTimeline } from "./animation";
+import {
+    LayoutAnimationController,
+    LayoutTimeline,
+    base_layer_name,
+} from "./animation";
 import { LayerNames, LayerSet, ViewLayer } from "./layers";
 import { BoardPainter } from "./painter";
 
@@ -30,6 +34,14 @@ export class BoardViewer extends DocumentViewer<
     BoardTheme
 > {
     #contextMenuCallback: ContextMenuCallback | null = null;
+    #track_opacity = 1;
+    #via_opacity = 1;
+    #zone_opacity = 1;
+    #pad_opacity = 1;
+    #pad_hole_opacity = 1;
+    #grid_opacity = 1;
+    #page_opacity = 1;
+    #sketch_mode = false;
 
     get board(): board_items.KicadPCB {
         return this.document;
@@ -90,12 +102,12 @@ export class BoardViewer extends DocumentViewer<
         timeline.current_time = 0;
 
         this.paint();
-        this.draw();
 
         this.#animation_controller = new LayoutAnimationController(
             this,
             timeline,
         );
+        this.#animation_controller.seek(0);
         return this.#animation_controller;
     }
 
@@ -116,6 +128,12 @@ export class BoardViewer extends DocumentViewer<
 
     protected override create_layer_set() {
         return new LayerSet(this.board, this.theme);
+    }
+    public override paint() {
+        super.paint();
+        if (this.layers) {
+            this.apply_object_opacities();
+        }
     }
 
     protected override get grid_origin() {
@@ -177,14 +195,54 @@ export class BoardViewer extends DocumentViewer<
         this.draw();
     }
 
-    private set_layers_opacity(layers: Generator<ViewLayer>, opacity: number) {
-        for (const layer of layers) {
-            layer.opacity = opacity;
+    private set_layers_opacity(
+        layers: Iterable<ViewLayer>,
+        opacity: number,
+        draw = true,
+    ) {
+        const names = new Set(Array.from(layers, (layer) => layer.name));
+        for (const layer of this.layers.in_order()) {
+            if (names.has(base_layer_name(layer.name))) {
+                layer.opacity = opacity;
+            }
         }
-        this.draw();
+        if (draw) {
+            this.draw();
+        }
+    }
+
+    private apply_object_opacities() {
+        const layers = this.layers as LayerSet;
+        this.set_layers_opacity(
+            layers.copper_layers(),
+            this.#track_opacity,
+            false,
+        );
+        this.set_layers_opacity(layers.via_layers(), this.#via_opacity, false);
+        this.set_layers_opacity(
+            layers.zone_layers(),
+            this.#zone_opacity,
+            false,
+        );
+        this.set_layers_opacity(layers.pad_layers(), this.#pad_opacity, false);
+        this.set_layers_opacity(
+            layers.pad_hole_layers(),
+            this.#pad_hole_opacity,
+            false,
+        );
+        this.set_layers_opacity(
+            layers.grid_layers(),
+            this.#grid_opacity,
+            false,
+        );
+        const page = layers.by_name(LayerNames.drawing_sheet);
+        if (page) {
+            page.opacity = this.#page_opacity;
+        }
     }
 
     set track_opacity(value: number) {
+        this.#track_opacity = value;
         this.set_layers_opacity(
             (this.layers as LayerSet).copper_layers(),
             value,
@@ -192,18 +250,22 @@ export class BoardViewer extends DocumentViewer<
     }
 
     set via_opacity(value: number) {
+        this.#via_opacity = value;
         this.set_layers_opacity((this.layers as LayerSet).via_layers(), value);
     }
 
     set zone_opacity(value: number) {
+        this.#zone_opacity = value;
         this.set_layers_opacity((this.layers as LayerSet).zone_layers(), value);
     }
 
     set pad_opacity(value: number) {
+        this.#pad_opacity = value;
         this.set_layers_opacity((this.layers as LayerSet).pad_layers(), value);
     }
 
     set pad_hole_opacity(value: number) {
+        this.#pad_hole_opacity = value;
         this.set_layers_opacity(
             (this.layers as LayerSet).pad_hole_layers(),
             value,
@@ -211,12 +273,51 @@ export class BoardViewer extends DocumentViewer<
     }
 
     set grid_opacity(value: number) {
+        this.#grid_opacity = value;
         this.set_layers_opacity((this.layers as LayerSet).grid_layers(), value);
     }
 
     set page_opacity(value: number) {
+        this.#page_opacity = value;
         this.layers.by_name(LayerNames.drawing_sheet)!.opacity = value;
         this.draw();
+    }
+
+    get sketch_mode() {
+        return this.#sketch_mode;
+    }
+
+    set sketch_mode(value: boolean) {
+        if (value === this.#sketch_mode) {
+            return;
+        }
+
+        const opacities = new Map(
+            Array.from(this.layers.in_order(), (layer) => [
+                layer.name,
+                layer.opacity,
+            ]),
+        );
+        const visibility = new Map(
+            Array.from((this.layers as LayerSet).in_ui_order(), (layer) => [
+                layer.name,
+                layer.visible,
+            ]),
+        );
+        this.#sketch_mode = value;
+        (this.renderer as WebGL2Renderer).outline_mode = value;
+        this.paint();
+        for (const layer of this.layers.in_order()) {
+            layer.opacity = opacities.get(layer.name) ?? layer.opacity;
+        }
+        for (const layer of (this.layers as LayerSet).in_ui_order()) {
+            layer.visible = visibility.get(layer.name) ?? layer.visible;
+        }
+        if (this.#animation_controller) {
+            this.#animation_controller.seek(this.#animation_controller.time);
+        } else {
+            this.draw();
+        }
     }
 
     zoom_to_board() {

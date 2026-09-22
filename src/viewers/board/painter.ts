@@ -36,7 +36,7 @@ import {
 import type { BoardTheme } from "../../kicad";
 
 abstract class BoardItemPainter extends ItemPainter {
-    override view_painter: BoardPainter;
+    declare view_painter: BoardPainter;
 
     override get theme(): BoardTheme {
         return this.view_painter.theme;

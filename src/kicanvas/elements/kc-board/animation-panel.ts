@@ -10,17 +10,23 @@
  * regular Layers panel, so the export matches what's on screen.
  */
 
+import { initiate_download } from "../../../base/dom/download";
 import { delegate } from "../../../base/events";
+import { BBox, Vec2 } from "../../../base/math";
 import { html } from "../../../base/web-components";
 import { KCUIElement, type KCUIRangeElement } from "../../../kc-ui";
-import type { BoardViewer } from "../../../viewers/board/viewer";
 import type { LayoutAnimationController } from "../../../viewers/board/animation";
-import { export_layout_animation_svg } from "../../../viewers/board/export-svg";
-import { initiate_download } from "../../../base/dom/download";
+import {
+    export_board_svg,
+    export_layout_animation_svg,
+} from "../../../viewers/board/export-svg";
+import type { BoardViewer } from "../../../viewers/board/viewer";
 
 export class KCBoardAnimationPanelElement extends KCUIElement {
     viewer: BoardViewer;
     animation: LayoutAnimationController | null = null;
+    #export_bbox: BBox | null = null;
+    #cancel_area_selection: (() => void) | null = null;
 
     override connectedCallback() {
         (async () => {
@@ -29,6 +35,10 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             super.connectedCallback();
             this.setup_events();
         })();
+    }
+    override disconnectedCallback() {
+        this.#cancel_area_selection?.();
+        super.disconnectedCallback();
     }
 
     private setup_events() {
@@ -41,8 +51,19 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
                 case "export-svg":
                     this.export_svg();
                     break;
+                case "export-static":
+                    void this.export_static();
+                    break;
                 case "export-video":
-                    this.export_video();
+                    void this.export_video();
+                    break;
+                case "select-area":
+                    this.select_export_area();
+                    break;
+                case "clear-area":
+                    this.#export_bbox = null;
+                    this.viewer.select(null);
+                    this.update_area_status();
                     break;
             }
         });
@@ -115,11 +136,160 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             this.viewer.board,
             this.viewer.layers,
             this.viewer.theme,
+            {
+                bbox: this.export_bbox(),
+                outline: this.viewer.sketch_mode,
+            },
         );
         const file = new File([svg], "layout-animation.svg", {
             type: "image/svg+xml",
         });
         initiate_download(file);
+    }
+
+    private select_export_area() {
+        this.#cancel_area_selection?.();
+
+        const canvas = this.viewer.canvas;
+        const old_cursor = canvas.style.cursor;
+        let start: Vec2 | null = null;
+
+        const point_for = (event: PointerEvent) => {
+            const rect = canvas.getBoundingClientRect();
+            return this.viewer.viewport.camera.screen_to_world(
+                new Vec2(event.clientX - rect.left, event.clientY - rect.top),
+            );
+        };
+        const stop_event = (event: PointerEvent) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        };
+        const on_down = (event: PointerEvent) => {
+            stop_event(event);
+            start = point_for(event);
+            canvas.setPointerCapture(event.pointerId);
+        };
+        const on_move = (event: PointerEvent) => {
+            if (!start) {
+                return;
+            }
+            stop_event(event);
+            this.viewer.select(BBox.from_points([start, point_for(event)]));
+        };
+        const cleanup = () => {
+            canvas.style.cursor = old_cursor;
+            canvas.removeEventListener("pointerdown", on_down, true);
+            canvas.removeEventListener("pointermove", on_move, true);
+            canvas.removeEventListener("pointerup", on_up, true);
+            window.removeEventListener("keydown", on_key);
+            this.#cancel_area_selection = null;
+        };
+        const on_up = (event: PointerEvent) => {
+            if (!start) {
+                return;
+            }
+            stop_event(event);
+            const bbox = BBox.from_points([start, point_for(event)]);
+            this.#export_bbox = bbox.valid ? bbox : null;
+            this.viewer.select(this.#export_bbox);
+            cleanup();
+            this.update_area_status();
+        };
+        const on_key = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                cleanup();
+            }
+        };
+
+        canvas.style.cursor = "crosshair";
+        canvas.addEventListener("pointerdown", on_down, true);
+        canvas.addEventListener("pointermove", on_move, true);
+        canvas.addEventListener("pointerup", on_up, true);
+        window.addEventListener("keydown", on_key);
+        this.#cancel_area_selection = cleanup;
+    }
+
+    private update_area_status() {
+        const status = this.renderRoot.querySelector(".area-status");
+        if (!status) {
+            return;
+        }
+        status.textContent = this.#export_bbox
+            ? `${this.#export_bbox.w.toFixed(1)} × ${this.#export_bbox.h.toFixed(1)} mm`
+            : "Full board";
+    }
+
+    private export_bbox() {
+        if (this.#export_bbox) {
+            return this.#export_bbox.copy();
+        }
+        let bbox = this.viewer.board.edge_cuts_bbox;
+        if (!bbox.valid) {
+            bbox = this.viewer.layers.bbox;
+        }
+        return bbox.grow(Math.max(bbox.w, bbox.h) * 0.05);
+    }
+
+    private async export_static() {
+        const format =
+            this.renderRoot.querySelector<HTMLSelectElement>(
+                'select[name="static-format"]',
+            )?.value ?? "svg";
+        const bbox = this.export_bbox();
+        const svg = export_board_svg(
+            this.viewer.board,
+            this.viewer.layers,
+            this.viewer.theme,
+            {
+                bbox,
+                outline: this.viewer.sketch_mode,
+            },
+            this.viewer.layout_animation?.timeline,
+        );
+
+        if (format === "svg") {
+            initiate_download(
+                new File([svg], "board.svg", { type: "image/svg+xml" }),
+            );
+            return;
+        }
+
+        const mime_type = format === "jpg" ? "image/jpeg" : `image/${format}`;
+        const blob = new Blob([svg], { type: "image/svg+xml" });
+        const url = URL.createObjectURL(blob);
+        try {
+            const image = new Image();
+            await new Promise<void>((resolve, reject) => {
+                image.onload = () => resolve();
+                image.onerror = () => reject(new Error("Unable to render SVG"));
+                image.src = url;
+            });
+
+            const canvas = document.createElement("canvas");
+            const scale = 2048 / Math.max(bbox.w, bbox.h);
+            canvas.width = Math.max(1, Math.round(bbox.w * scale));
+            canvas.height = Math.max(1, Math.round(bbox.h * scale));
+            const context = canvas.getContext("2d");
+            if (!context) {
+                throw new Error("Unable to create export canvas");
+            }
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            const raster = await new Promise<Blob>((resolve, reject) => {
+                canvas.toBlob(
+                    (result) =>
+                        result
+                            ? resolve(result)
+                            : reject(new Error("Unable to encode image")),
+                    mime_type,
+                    0.92,
+                );
+            });
+            initiate_download(
+                new File([raster], `board.${format}`, { type: mime_type }),
+            );
+        } finally {
+            URL.revokeObjectURL(url);
+        }
     }
 
     private async export_video() {
@@ -162,9 +332,41 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
                         </kc-ui-control>
                     </kc-ui-control-list>
                 </kc-ui-panel-body>
+                <kc-ui-panel-title title="Export area"></kc-ui-panel-title>
+                <kc-ui-panel-body padded>
+                    <kc-ui-control-list>
+                        <kc-ui-control>
+                            <label>Area</label>
+                            <span class="area-status">Full board</span>
+                            <kc-ui-button
+                                name="select-area"
+                                title="Drag on the board to select an export area"
+                                >Select</kc-ui-button
+                            >
+                            <kc-ui-button
+                                name="clear-area"
+                                title="Export the full board"
+                                >Full board</kc-ui-button
+                            >
+                        </kc-ui-control>
+                    </kc-ui-control-list>
+                </kc-ui-panel-body>
                 <kc-ui-panel-title title="Export"></kc-ui-panel-title>
                 <kc-ui-panel-body padded>
                     <kc-ui-control-list>
+                        <kc-ui-control>
+                            <label>Static image</label>
+                            <select name="static-format" aria-label="Format">
+                                <option value="svg">SVG</option>
+                                <option value="png">PNG</option>
+                                <option value="webp">WebP</option>
+                                <option value="jpg">JPEG</option>
+                            </select>
+                            <kc-ui-button
+                                name="export-static"
+                                icon="image"
+                                title="Export current visibility and opacity"></kc-ui-button>
+                        </kc-ui-control>
                         <kc-ui-control>
                             <label>Animated SVG</label>
                             <kc-ui-button

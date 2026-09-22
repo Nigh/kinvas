@@ -502,12 +502,14 @@ export class LayoutAnimationController {
         this.#time = Math.max(0, Math.min(time, this.duration));
         this.timeline.current_time = this.#time;
 
-        // Fade the currently-appearing bucket in; already-shown buckets get
-        // full opacity. Bucket layers are found by name.
+        // Keep animation fades separate from user-controlled layer opacity.
         for (const layer of this.#viewer.layers.in_order()) {
             const bucket = bucket_of(layer.name);
             if (bucket != null) {
-                layer.opacity = this.timeline.opacity_for(bucket, this.#time);
+                layer.animation_opacity = this.timeline.opacity_for(
+                    bucket,
+                    this.#time,
+                );
             }
         }
 

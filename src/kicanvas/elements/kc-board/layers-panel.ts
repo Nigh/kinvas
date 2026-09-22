@@ -136,8 +136,6 @@ export class KCBoardLayersPanelElement extends KCUIElement {
                 // otherwise mark it as highlighted.
                 else {
                     this.viewer.layers.highlight(layer);
-                    layer.visible = true;
-                    item.layer_visible = true;
                     item.layer_highlighted = true;
                 }
 
@@ -335,27 +333,26 @@ class KCBoardLayerControlElement extends KCUIElement {
         css`
             :host {
                 box-sizing: border-box;
-                padding: 0.1em 0.8em 0.1em 0.4em;
-                color: white;
+                padding: 0.1em 0.4em;
+                color: var(--list-item-fg);
+                background: var(--list-item-bg);
                 text-align: left;
                 display: flex;
-                flex-direction: row;
                 width: 100%;
                 align-items: center;
             }
 
             button {
                 all: unset;
+                box-sizing: border-box;
                 cursor: pointer;
-                flex-shrink: 0;
-                margin-left: 1em;
-                color: white;
-                border: 0 none;
-                background: transparent;
-                padding: 0 0.25em 0 0.25em;
-                margin-right: -0.25em;
                 display: flex;
                 align-items: center;
+                border-radius: 2px;
+            }
+
+            button:focus-visible {
+                outline: var(--input-focus-outline);
             }
 
             .color {
@@ -379,45 +376,56 @@ class KCBoardLayerControlElement extends KCUIElement {
                 padding: 0;
             }
 
+            .focus {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
             .name {
                 display: block;
-                flex-grow: 1;
+                width: 100%;
+                padding: 0.1em 0.35em;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                transition:
+                    color var(--transition-time-short) ease,
+                    background-color var(--transition-time-short) ease;
             }
 
-            .for-hidden {
-                color: #888;
+            .focus:hover .name {
+                color: var(--list-item-hover-fg);
+                background: var(--list-item-hover-bg);
             }
 
-            :host {
-                background: var(--list-item-disabled-bg);
+            :host([layer-highlighted]) .name {
+                color: var(--list-item-active-fg);
+                background: var(--list-item-active-bg);
+            }
+
+            .visibility {
+                flex: 0 0 1.8em;
+                height: 1.8em;
+                justify-content: center;
+                margin-left: 0.25em;
+                color: var(--list-item-fg);
+                transition:
+                    color var(--transition-time-short) ease,
+                    background-color var(--transition-time-short) ease;
+            }
+
+            :host(:not([layer-visible])) .visibility {
                 color: var(--list-item-disabled-fg);
             }
 
-            :host(:hover) {
-                background: var(--list-item-hover-bg);
+            .visibility:hover {
                 color: var(--list-item-hover-fg);
+                background: var(--list-item-hover-bg);
             }
 
-            :host(:hover) button {
-                color: var(--list-item-bg);
-            }
-
-            :host(:hover) button:hover {
-                color: var(--list-item-fg);
-            }
-
-            :host([layer-visible]) {
-                background: var(--list-item-bg);
-                color: var(--list-item-fg);
-            }
-
-            :host([layer-highlighted]) {
-                background: var(--list-item-active-bg);
-                color: var(--list-item-active-fg);
-            }
-
-            :host([layer-highlighted]:hover) button {
-                color: var(--list-item-fg);
+            .focus:active .name,
+            .visibility:active {
+                transform: translateY(1px);
             }
 
             :host kc-ui-icon.for-visible,
@@ -449,18 +457,15 @@ class KCBoardLayerControlElement extends KCUIElement {
                 return;
             }
 
-            const button = target.closest("button");
-            let event_name;
+            const visibility = target.closest("button.visibility");
+            const focus = target.closest("button.focus");
+            if (!visibility && !focus) {
+                return;
+            }
 
-            // Visibility button clicked.
-            if (button) {
-                event_name = KCBoardLayerControlElement.visibility_event;
-            }
-            // Otherwise, some other part of the element was clicked so it's
-            // "selected".
-            else {
-                event_name = KCBoardLayerControlElement.select_event;
-            }
+            const event_name = visibility
+                ? KCBoardLayerControlElement.visibility_event
+                : KCBoardLayerControlElement.select_event;
 
             this.dispatchEvent(
                 new CustomEvent(event_name, {
@@ -502,9 +507,20 @@ class KCBoardLayerControlElement extends KCUIElement {
         return html`<input
                 class="color"
                 type="color"
+                aria-label="Color for ${this.layer_name}"
                 value="${css_to_hex(this.layer_color)}" />
-            <span class="name">${this.layer_name}</span>
-            <button type="button" name="${this.layer_name}">
+            <button
+                class="focus"
+                type="button"
+                aria-label="Focus ${this.layer_name}"
+                aria-pressed="${this.layer_highlighted}">
+                <span class="name">${this.layer_name}</span>
+            </button>
+            <button
+                class="visibility"
+                type="button"
+                aria-label="Toggle ${this.layer_name} visibility"
+                aria-pressed="${this.layer_visible}">
                 <kc-ui-icon class="for-visible">visibility</kc-ui-icon>
                 <kc-ui-icon class="for-hidden">visibility_off</kc-ui-icon>
             </button>`;

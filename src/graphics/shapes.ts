@@ -113,3 +113,63 @@ export class Polygon {
 }
 
 export type Shape = Circle | Arc | Polygon | Polyline;
+
+const outline_width = 0.15;
+
+export function circle_outline(circle: Circle): Polyline {
+    const points = Array.from({ length: 33 }, (_, i) => {
+        const angle = (i / 32) * Math.PI * 2;
+        return new Vec2(
+            circle.center.x + Math.cos(angle) * circle.radius,
+            circle.center.y + Math.sin(angle) * circle.radius,
+        );
+    });
+    return new Polyline(
+        points,
+        Math.min(outline_width, circle.radius / 2),
+        circle.color,
+    );
+}
+
+export function polygon_outline(polygon: Polygon): Polyline {
+    return new Polyline(
+        polygon.points.length ? [...polygon.points, polygon.points[0]!] : [],
+        outline_width,
+        polygon.color,
+    );
+}
+
+export function polyline_outline(line: Polyline): Polyline[] {
+    if (line.points.length < 2 || line.width <= 0) {
+        return [line];
+    }
+
+    const half_width = line.width / 2;
+    const edge_width = Math.min(outline_width, line.width / 4);
+    const offsets = line.points.map((point, index) => {
+        const previous =
+            index > 0
+                ? point.sub(line.points[index - 1]!).normal.normalize()
+                : null;
+        const next =
+            index < line.points.length - 1
+                ? line.points[index + 1]!.sub(point).normal.normalize()
+                : null;
+
+        if (!previous) return next!.multiply(half_width);
+        if (!next) return previous.multiply(half_width);
+
+        const miter = previous.add(next).normalize();
+        const alignment = Math.abs(miter.x * next.x + miter.y * next.y);
+        return miter.multiply(half_width / Math.max(alignment, 0.25));
+    });
+    const left = line.points.map((point, index) => point.add(offsets[index]!));
+    const right = line.points.map((point, index) => point.sub(offsets[index]!));
+
+    return [
+        new Polyline(left, edge_width, line.color),
+        new Polyline(right, edge_width, line.color),
+        new Polyline([left[0]!, right[0]!], edge_width, line.color),
+        new Polyline([left.at(-1)!, right.at(-1)!], edge_width, line.color),
+    ];
+}

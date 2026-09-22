@@ -18,7 +18,11 @@ import {
     base_layer_name,
 } from "./animation";
 import { LayerNames, LayerSet, ViewLayer } from "./layers";
-import { BoardPainter } from "./painter";
+import {
+    BoardPainter,
+    type BoardObjectType,
+    type BoardSketchModes,
+} from "./painter";
 
 export type ContextMenuCallback = (
     screenX: number,
@@ -41,7 +45,13 @@ export class BoardViewer extends DocumentViewer<
     #pad_hole_opacity = 1;
     #grid_opacity = 1;
     #page_opacity = 1;
-    #sketch_mode = false;
+    #sketch_modes: BoardSketchModes = {
+        tracks: false,
+        vias: false,
+        pads: false,
+        holes: false,
+        zones: false,
+    };
 
     get board(): board_items.KicadPCB {
         return this.document;
@@ -61,6 +71,7 @@ export class BoardViewer extends DocumentViewer<
     }
 
     protected override on_painter_created(painter: BoardPainter) {
+        painter.sketch_modes = this.#sketch_modes;
         if (this.#animation_timeline) {
             painter.timeline = this.#animation_timeline;
         }
@@ -283,35 +294,46 @@ export class BoardViewer extends DocumentViewer<
         this.draw();
     }
 
-    get sketch_mode() {
-        return this.#sketch_mode;
+    get sketch_modes(): Readonly<BoardSketchModes> {
+        return this.#sketch_modes;
     }
 
-    set sketch_mode(value: boolean) {
-        if (value === this.#sketch_mode) {
+    sketch_mode_for(object: BoardObjectType): boolean {
+        return this.#sketch_modes[object];
+    }
+
+    set_sketch_mode(object: BoardObjectType, value: boolean) {
+        if (value === this.#sketch_modes[object]) {
             return;
         }
 
+        this.#sketch_modes[object] = value;
+        this.repaint_preserving_layer_state();
+    }
+
+    private repaint_preserving_layer_state() {
         const opacities = new Map(
             Array.from(this.layers.in_order(), (layer) => [
                 layer.name,
                 layer.opacity,
             ]),
         );
+        const ui_layers = Array.from((this.layers as LayerSet).in_ui_order());
         const visibility = new Map(
-            Array.from((this.layers as LayerSet).in_ui_order(), (layer) => [
-                layer.name,
-                layer.visible,
-            ]),
+            ui_layers.map((layer) => [layer.name, layer.visible]),
         );
-        this.#sketch_mode = value;
-        (this.renderer as WebGL2Renderer).outline_mode = value;
+        const highlighted = ui_layers.find((layer) => layer.highlighted)?.name;
+
         this.paint();
+
         for (const layer of this.layers.in_order()) {
             layer.opacity = opacities.get(layer.name) ?? layer.opacity;
         }
         for (const layer of (this.layers as LayerSet).in_ui_order()) {
             layer.visible = visibility.get(layer.name) ?? layer.visible;
+        }
+        if (highlighted) {
+            this.layers.highlight(highlighted);
         }
         if (this.#animation_controller) {
             this.#animation_controller.seek(this.#animation_controller.time);

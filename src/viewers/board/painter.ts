@@ -16,6 +16,7 @@ import { Circle, Color, Polygon, Polyline, Renderer } from "../../graphics";
 import { StrokeParams } from "../../kicad/common.ts";
 import * as board_items from "../../kicad/board";
 import { EDAText, StrokeFont, TextAttributes } from "../../kicad/text";
+import type { BoardTheme } from "../../kicad";
 import { DocumentPainter, ItemPainter, StrokePainter } from "../base/painter";
 import { ViewLayerNames } from "../base/view-layers";
 import {
@@ -33,7 +34,21 @@ import {
     virtual_layer_for,
     is_manufacturing_layer,
 } from "./layers";
-import type { BoardTheme } from "../../kicad";
+
+export type BoardObjectType = "tracks" | "vias" | "pads" | "holes" | "zones";
+
+export type BoardSketchModes = Record<BoardObjectType, boolean>;
+
+const pad_layers = new Set<string>([
+    LayerNames.pads_front,
+    LayerNames.pads_back,
+]);
+
+const pad_hole_layers = new Set<string>([
+    LayerNames.non_plated_holes,
+    LayerNames.pad_holes,
+    LayerNames.pad_holewalls,
+]);
 
 abstract class BoardItemPainter extends ItemPainter {
     declare view_painter: BoardPainter;
@@ -1250,6 +1265,44 @@ export class BoardPainter extends DocumentPainter {
      * time by toggling bucket layer visibility.
      */
     timeline: LayoutTimeline | null = null;
+
+    sketch_modes: Readonly<BoardSketchModes> = {
+        tracks: false,
+        vias: false,
+        pads: false,
+        holes: false,
+        zones: false,
+    };
+
+    override paint_item(layer: ViewLayer, item: unknown, ...rest: unknown[]) {
+        const layer_name = base_layer_name(layer.name);
+        let outline = false;
+
+        if (
+            item instanceof board_items.LineSegment ||
+            item instanceof board_items.ArcSegment
+        ) {
+            outline = this.sketch_modes.tracks;
+        } else if (item instanceof board_items.Via) {
+            outline = this.sketch_modes.vias;
+        } else if (item instanceof board_items.Zone) {
+            outline = this.sketch_modes.zones;
+        } else if (item instanceof board_items.Pad) {
+            if (pad_hole_layers.has(layer_name)) {
+                outline = this.sketch_modes.holes;
+            } else if (pad_layers.has(layer_name)) {
+                outline = this.sketch_modes.pads;
+            }
+        }
+
+        this.gfx.state.push();
+        this.gfx.state.outline = outline;
+        try {
+            super.paint_item(layer, item, ...rest);
+        } finally {
+            this.gfx.state.pop();
+        }
+    }
 
     protected override layer_name_for(
         item: unknown,

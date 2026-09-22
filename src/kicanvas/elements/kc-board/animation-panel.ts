@@ -138,7 +138,7 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             this.viewer.theme,
             {
                 bbox: this.export_bbox(),
-                outline: this.viewer.sketch_mode,
+                sketch_modes: this.viewer.sketch_modes,
             },
         );
         const file = new File([svg], "layout-animation.svg", {
@@ -242,7 +242,7 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             this.viewer.theme,
             {
                 bbox,
-                outline: this.viewer.sketch_mode,
+                sketch_modes: this.viewer.sketch_modes,
             },
             this.viewer.layout_animation?.timeline,
         );

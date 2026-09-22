@@ -334,6 +334,7 @@ export class RenderState {
         public stroke: Color = Color.black,
         public stroke_width: number = 0,
         public flipped: boolean = false,
+        public outline: boolean = false,
     ) {}
 
     copy() {
@@ -343,6 +344,7 @@ export class RenderState {
             this.stroke?.copy(),
             this.stroke_width,
             this.flipped,
+            this.outline,
         );
     }
 }
@@ -402,6 +404,14 @@ export class RenderStateStack {
 
     set flipped(f: boolean) {
         this.top.flipped = f;
+    }
+
+    get outline(): boolean {
+        return this.top.outline;
+    }
+
+    set outline(value: boolean) {
+        this.top.outline = value;
     }
 
     /**

@@ -5,12 +5,38 @@
 */
 
 import { delegate } from "../../../base/events";
-import { html } from "../../../base/web-components";
+import { css, html } from "../../../base/web-components";
 import { KCUIElement, type KCUIRangeElement } from "../../../kc-ui";
+import type { BoardObjectType } from "../../../viewers/board/painter";
 import { BoardViewer } from "../../../viewers/board/viewer";
 
 export class KCBoardObjectsPanelElement extends KCUIElement {
     viewer: BoardViewer;
+    static override styles = [
+        ...KCUIElement.styles,
+        css`
+            .object-label,
+            .sketch-toggle {
+                display: flex;
+                align-items: center;
+            }
+
+            .object-label {
+                justify-content: space-between;
+                gap: 0.75em;
+            }
+
+            .sketch-toggle {
+                gap: 0.3em;
+                color: var(--list-item-disabled-fg);
+                font-size: 0.9em;
+            }
+
+            .sketch-toggle input {
+                margin: 0;
+            }
+        `,
+    ];
 
     override connectedCallback() {
         (async () => {
@@ -49,6 +75,14 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                     break;
             }
         });
+
+        delegate(this.renderRoot, "input[data-sketch]", "change", (e) => {
+            const control = e.target as HTMLInputElement;
+            this.viewer.set_sketch_mode(
+                control.name as BoardObjectType,
+                control.checked,
+            );
+        });
     }
 
     override render() {
@@ -58,7 +92,20 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                 <kc-ui-panel-body padded>
                     <kc-ui-control-list>
                         <kc-ui-control>
-                            <label>Tracks</label>
+                            <label class="object-label">
+                                <span>Tracks</span>
+                                <span class="sketch-toggle">
+                                    <input
+                                        type="checkbox"
+                                        data-sketch
+                                        name="tracks"
+                                        aria-label="Sketch tracks"
+                                        checked="${this.viewer.sketch_mode_for(
+                                            "tracks",
+                                        )}" />
+                                    Sketch
+                                </span>
+                            </label>
                             <kc-ui-range
                                 min="0"
                                 max="1.0"
@@ -67,7 +114,20 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                                 name="tracks"></kc-ui-range>
                         </kc-ui-control>
                         <kc-ui-control>
-                            <label>Vias</label>
+                            <label class="object-label">
+                                <span>Vias</span>
+                                <span class="sketch-toggle">
+                                    <input
+                                        type="checkbox"
+                                        data-sketch
+                                        name="vias"
+                                        aria-label="Sketch vias"
+                                        checked="${this.viewer.sketch_mode_for(
+                                            "vias",
+                                        )}" />
+                                    Sketch
+                                </span>
+                            </label>
                             <kc-ui-range
                                 min="0"
                                 max="1.0"
@@ -76,7 +136,20 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                                 name="vias"></kc-ui-range>
                         </kc-ui-control>
                         <kc-ui-control>
-                            <label>Pads</label>
+                            <label class="object-label">
+                                <span>Pads</span>
+                                <span class="sketch-toggle">
+                                    <input
+                                        type="checkbox"
+                                        data-sketch
+                                        name="pads"
+                                        aria-label="Sketch pads"
+                                        checked="${this.viewer.sketch_mode_for(
+                                            "pads",
+                                        )}" />
+                                    Sketch
+                                </span>
+                            </label>
                             <kc-ui-range
                                 min="0"
                                 max="1.0"
@@ -85,7 +158,20 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                                 name="pads"></kc-ui-range>
                         </kc-ui-control>
                         <kc-ui-control>
-                            <label>Through holes</label>
+                            <label class="object-label">
+                                <span>Through holes</span>
+                                <span class="sketch-toggle">
+                                    <input
+                                        type="checkbox"
+                                        data-sketch
+                                        name="holes"
+                                        aria-label="Sketch through holes"
+                                        checked="${this.viewer.sketch_mode_for(
+                                            "holes",
+                                        )}" />
+                                    Sketch
+                                </span>
+                            </label>
                             <kc-ui-range
                                 min="0"
                                 max="1.0"
@@ -94,7 +180,20 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                                 name="holes"></kc-ui-range>
                         </kc-ui-control>
                         <kc-ui-control>
-                            <label>Zones</label>
+                            <label class="object-label">
+                                <span>Zones</span>
+                                <span class="sketch-toggle">
+                                    <input
+                                        type="checkbox"
+                                        data-sketch
+                                        name="zones"
+                                        aria-label="Sketch zones"
+                                        checked="${this.viewer.sketch_mode_for(
+                                            "zones",
+                                        )}" />
+                                    Sketch
+                                </span>
+                            </label>
                             <kc-ui-range
                                 min="0"
                                 max="1.0"

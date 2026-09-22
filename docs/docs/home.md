@@ -1,20 +1,20 @@
-# KiCanvas
+# kinvas
 
-[KiCanvas] is an **interactive**, **browser-based** viewer for [KiCad] schematics and boards. You can try it out for yourself at [kicanvas.org](https://kicanvas.org).
+[kinvas] is an **interactive**, **browser-based** viewer for [KiCad] schematics and boards. Try it at [nigh.github.io/kinvas](https://nigh.github.io/kinvas/).
 
 <video src="https://user-images.githubusercontent.com/250995/233475339-43c89a26-c825-4999-9d0a-7bde690c96ca.mp4" controls="true"></video>
 
 !!! warning
 
-    KiCanvas is currently in **early alpha**. There will be bugs and missing features. Please take a look at [known issues](#known-issues) and [file an issue] if you run into trouble.
+    kinvas is currently in **early alpha**. There will be bugs and missing features. Please review [known issues](#known-issues) and [file an issue] if you encounter trouble.
 
-You can also use KiCanvas on your own websites using the [embedding API](embedding.md). It's written in modern vanilla [TypeScript] and uses the [Canvas] element and [WebGL] for rendering. You can learn more on the [development page](development.md).
+You can also use kinvas on your own websites through the [embedding API](embedding.md). It is written in modern vanilla [TypeScript] and uses the [Canvas] element and [WebGL] for rendering.
 
-KiCanvas is developed by [Thea Flowers](https://thea.codes) with financial support from her [sponsors].
+kinvas is developed by [Thea Flowers](https://thea.codes) with financial support from her [sponsors].
 
-[KiCanvas]: http://kicanvas.org/home/
+[kinvas]: https://nigh.github.io/kinvas/
 [KiCad]: https://kicad.org
-[file an issue]: https://github.com/theacodes/kicanvas/issues/new/choose
+[file an issue]: https://github.com/Nigh/kinvas/issues/new/choose
 [TypeScript]: https://typescript.dev
 [Canvas]: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
 [WebGL]: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API
@@ -25,39 +25,39 @@ KiCanvas is developed by [Thea Flowers](https://thea.codes) with financial suppo
 
 In general, please check the [GitHub issues] page before filing new issues. Some high-level things that we known won't work:
 
-- Any KiCad 5 files, KiCanvas can only parse files from KiCad 6 and later.
+- Any KiCad 5 files; kinvas can only parse files from KiCad 6 and later.
 - Some KiCad 7 features might not be fully implemented, such as custom fonts in schematics.
 - Browsers other than desktop Chrome, Firefox, and Safari may run into issues, as we aren't currently running automated tests against other browsers. We welcome issues related to browser compatibility, just make sure it hasn't already been reported.
 
-[GitHub issues]: https://github.com/theacodes/kicanvas/issues
+[GitHub issues]: https://github.com/Nigh/kinvas/issues
 
 ## FAQ
 
 > Will you add this feature that's very important to me?
 
-Maybe, maybe not. Check out our explicit non-goals in the [roadmap](#status-and-roadmap) section. Check the [GitHub issues] and see if the feature has already been requested. If not, feel free to create an issue and we'll talk about it. Please keep in mind that KiCanvas is intentionally limited in scope.
+Maybe, maybe not. Check the non-goals in the [roadmap](roadmap.md), then search [GitHub issues]. Please keep in mind that kinvas is intentionally limited in scope.
 
-> Can I use KiCanvas on my own site?
+> Can I use kinvas on my own site?
 
 Yes, but, it's all very early stages. See [embedding](embedding.md) for more details.
 
-> Do I need to use a plugin to show my files in KiCanvas
+> Do I need a plugin to show files in kinvas?
 
-Nope, not at all. KiCanvas reads KiCad files directly.
+No. kinvas reads KiCad files directly.
 
 > Are you going to support KiCad 7 features? Custom fonts?
 
-Yes. I'm actively working on bringing KiCanvas up to parity with KiCad 7, including custom fonts. For the time being, KiCad 7 files should parse and load in KiCanvas, however, KiCanvas may not render some KiCad 7 features correctly.
+Yes. I'm actively working on bringing kinvas up to parity with KiCad 7, including custom fonts. KiCad 7 files should parse and load, but kinvas may not render some features correctly.
 
-> Will KiCanvas support something like [InteractiveHtmlBom]?
+> Will kinvas support something like [InteractiveHtmlBom]?
 
-Yes, KiCanvas will eventually let you view PCBs in "Assembly guide" mode. This won't require any extra KiCad plugins or anything.
+Yes. kinvas will eventually provide an "Assembly guide" mode without extra KiCad plugins.
 
 [InteractiveHtmlBom]: https://github.com/openscopeproject/InteractiveHtmlBom
 
-> Why isn't KiCanvas on NPM?
+> Why isn't kinvas on NPM?
 
-Because KiCanvas's developer-facing APIs for embedding and parsing are not yet ready. I don't want to publish it only to immediately break users as I rapidly iterate and change things. These developer APIs are my next priority after getting rendering to a good state. Stay tuned.
+kinvas developer APIs for embedding and parsing are not stable enough to publish yet.
 
 > Why don't you support KiCad 5 files?
 
@@ -65,42 +65,42 @@ KiCad 5 files are a completely different format from V6 and onwards. Implementin
 
 > Why didn't you use [x] library/framework?
 
-From the outset I wanted KiCanvas to be dependency-free. KiCanvas should not pull in any additional libraries that may interfere with the page its embedding on.
+kinvas avoids runtime dependencies so embedded pages do not inherit conflicting libraries.
 
-> Lol are you going to port all of KiCad to the browser?
+> Will you port all of KiCad to the browser?
 
-No, KiCanvas is explicitly read-only and due to that assumption being baked in it wouldn't serve as a good base for a browser-based editor.
+No. kinvas is read-only and is not a suitable base for a browser-based editor.
 
 > How can I help?
 
-- **Try it out**: Test out your projects, schematics, and boards with KiCanvas and report issues.
-- **Contribute code**: Since KiCanvas is still pretty early in its development, code contributions are harder to coordinate. Please file an issue or reach out before trying to contribute code, since I don't want you to waste your time.
+- **Try it out**: Test projects, schematics, and boards with kinvas and report issues.
+- **Contribute code**: Since kinvas is still early in development, file an issue before starting work.
 - **Sponsor**: This project is lead by a single person financially supported through [sponsors].
 
 ## Contributing
 
-Contributions are welcome! However, since KiCanvas is in a super early stage please file an issue before you start working on something so we can coordinate. It's also recommended to take a moment and read over the [development documentation](development.md).
+Contributions are welcome! Since kinvas is in an early stage, please file an issue before starting work so we can coordinate. Also read the [development documentation](development.md).
 
 ## License
 
-KiCanvas is open source and published under the permissive MIT license. Please take a chance to read over the [license](license.md) for full details.
+kinvas is open source and published under the permissive MIT license. Read the [license](license.md) for details.
 
 ## Community projects
 
-Projects built on KiCanvas:
+Projects built on kinvas:
 
 - [KiSite](https://github.com/hmcty/kisite): A static site generator for KiCad projects
 
 Projects with overlapping functionality:
 
 - [KiRi](https://github.com/leoheck/kiri): Visual diff tool for schematics and layouts
-- [ecad-viewer](https://github.com/Huaqiu-Electronics/ecad-viewer): Fork of KiCanvas
+- [ecad-viewer](https://github.com/Huaqiu-Electronics/ecad-viewer): Fork of kinvas
 - [KiCAD-PRISM](https://github.com/krishna-swaroop/KiCAD-Prism): Cloud-based KiCad workspace, built on `ecad-viewer`
 - [InteractiveHtmlBom](https://github.com/openscopeproject/interactivehtmlbom): Plugin to visualize KiCad BOM and assembly instructions
 
 ## Special thanks
 
-KiCanvas would not be possible without the incredible financial support of our [sponsors]. KiCanvas received significant support from the following individual and organizations:
+kinvas would not be possible without the financial support of our [sponsors]. The following people and organizations provided significant support:
 
 - [PartsBox](https://partsbox.com/)
 - [Blues](https://blues.io/)

@@ -48,10 +48,14 @@ export class ViewLayer implements IDisposable {
     color: Color;
 
     /**
-     * The layer opacity is used when rendering the layer.
+     * User-controlled layer opacity.
      */
-    opacity: number;
+    opacity = 1;
 
+    /**
+     * Transient animation opacity, kept separate from user settings.
+     */
+    animation_opacity = 1;
     /**
      * Board or schematic items on this layer.
      */
@@ -173,6 +177,24 @@ export class ViewLayerSet implements IDisposable {
     add(...layers: ViewLayer[]) {
         for (const layer of layers) {
             this.#layer_list.push(layer);
+            this.#layer_map.set(layer.name, layer);
+        }
+    }
+
+    /**
+     * Adds layers immediately after the named layer, keeping them adjacent
+     * to it in the rendering order.
+     */
+    add_after(existing_name: string, ...layers: ViewLayer[]) {
+        const index = this.#layer_list.findIndex(
+            (l) => l.name === existing_name,
+        );
+        if (index < 0) {
+            this.add(...layers);
+            return;
+        }
+        this.#layer_list.splice(index + 1, 0, ...layers);
+        for (const layer of layers) {
             this.#layer_map.set(layer.name, layer);
         }
     }

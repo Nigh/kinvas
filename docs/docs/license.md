@@ -1,10 +1,10 @@
 # License
 
-## KiCanvas
+## kinvas
 
-KiCanvas is free and open source source distributed under the terms specified below.
+kinvas is free and open source software distributed under the terms specified below.
 
-KiCanvas is © 2022 by Alethea Katherine Flowers and is published under the MIT License:
+kinvas is © 2022 by Alethea Katherine Flowers and is published under the MIT License:
 
 ```text
 Permission is hereby granted, free of charge, to any person obtaining a copy

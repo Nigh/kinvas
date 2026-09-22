@@ -7,7 +7,15 @@
 import { Color } from "../../base/color";
 import { Angle, Matrix3, Vec2 } from "../../base/math";
 import { RenderLayer, Renderer } from "../renderer";
-import { Arc, Circle, Polygon, Polyline } from "../shapes";
+import {
+    Arc,
+    Circle,
+    Polygon,
+    Polyline,
+    circle_outline,
+    polygon_outline,
+    polyline_outline,
+} from "../shapes";
 import { PrimitiveSet } from "./vector";
 
 /**
@@ -37,7 +45,12 @@ export class WebGL2Renderer extends Renderer {
      * Create and configure the WebGL2 context.
      */
     override async setup() {
-        const gl = this.canvas.getContext("webgl2", { alpha: false });
+        // preserveDrawingBuffer is required for video export via
+        // canvas.captureStream(), which reads the buffer asynchronously.
+        const gl = this.canvas.getContext("webgl2", {
+            alpha: false,
+            preserveDrawingBuffer: true,
+        });
 
         if (gl == null) {
             throw new Error("Unable to create WebGL2 context");
@@ -149,6 +162,11 @@ export class WebGL2Renderer extends Renderer {
             return;
         }
 
+        if (this.state.outline) {
+            this.#active_layer!.geometry.add_line(circle_outline(circle));
+            return;
+        }
+
         this.#active_layer!.geometry.add_circle(circle);
     }
 
@@ -163,6 +181,13 @@ export class WebGL2Renderer extends Renderer {
             return;
         }
 
+        if (this.state.outline) {
+            for (const edge of polyline_outline(line)) {
+                this.#active_layer!.geometry.add_line(edge);
+            }
+            return;
+        }
+
         this.#active_layer!.geometry.add_line(line);
     }
 
@@ -170,6 +195,11 @@ export class WebGL2Renderer extends Renderer {
         const polygon = super.prep_polygon(polygon_or_points, color);
 
         if (!polygon.color) {
+            return;
+        }
+
+        if (this.state.outline && polygon.points.length) {
+            this.#active_layer!.geometry.add_line(polygon_outline(polygon));
             return;
         }
 

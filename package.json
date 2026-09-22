@@ -1,5 +1,5 @@
 {
-    "name": "kicanvas",
+    "name": "kinvas",
     "version": "0.0.0",
     "description": "",
     "type": "module",
@@ -43,12 +43,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/theacodes/kicanvas.js.git"
+        "url": "git+https://github.com/Nigh/kinvas.git"
     },
     "author": "Alethea Katherine Flowers",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/theacodes/kicanvas.js/issues"
+        "url": "https://github.com/Nigh/kinvas/issues"
     },
-    "homepage": "https://github.com/theacodes/kicanvas.js#readme"
+    "homepage": "https://nigh.github.io/kinvas/"
 }

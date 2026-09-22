@@ -11,9 +11,7 @@ import { CSS, attribute, html, query } from "../../base/web-components";
 import { KCUIElement, KCUIIconElement } from "../../kc-ui";
 import { sprites_url } from "../icons/sprites";
 import { Project } from "../project";
-import { GitHubFileSystem } from "../services/github-vfs";
-import { CodebergFileSystem } from "../services/codeberg-vfs";
-import { FetchFileSystem, type IFileSystem } from "../services/vfs";
+import type { IFileSystem } from "../services/vfs";
 import { KCBoardAppElement } from "./kc-board/app";
 import { KCSchematicAppElement } from "./kc-schematic/app";
 
@@ -71,63 +69,14 @@ class KiCanvasShellElement extends KCUIElement {
     @attribute({ type: Boolean })
     public loaded: boolean;
 
-    @attribute({ type: String })
-    public src: string;
-
-    @query(`input[name="link"]`, true)
-    public link_input: HTMLInputElement;
-
     @query(`button[name="open_local"]`, true)
     public open_file_button: HTMLButtonElement;
 
     override initialContentCallback() {
-        const url_params = new URLSearchParams(document.location.search);
-
-        const urls = [
-            ...url_params.getAll("github"),
-            ...url_params.getAll("repo"),
-        ];
-
-        // Only load the first URL
-        const url = urls[0];
-
         later(async () => {
-            if (this.src) {
-                const vfs = new FetchFileSystem([this.src]);
-                await this.setup_project(vfs);
-                return;
-            }
-
-            if (url) {
-                const vfs = await this.load_repo(url);
-                if (!vfs) {
-                    return;
-                }
-
-                await this.setup_project(vfs);
-                return;
-            }
-
             new DropTarget(this, async (fs) => {
                 await this.setup_project(fs);
             });
-        });
-
-        this.link_input.addEventListener("input", async (e) => {
-            const link = this.link_input.value;
-            const vfs = await this.load_repo(link);
-
-            if (!vfs) {
-                // TODO: show error message: invaild URL
-                console.error(`Invalid URL: ${link}`);
-                return;
-            }
-
-            await this.setup_project(vfs);
-
-            const location = new URL(window.location.href);
-            location.searchParams.set("repo", link);
-            window.history.pushState(null, "", location);
         });
 
         this.open_file_button.addEventListener("click", async (e) => {
@@ -135,13 +84,6 @@ class KiCanvasShellElement extends KCUIElement {
                 await this.setup_project(vfs);
             });
         });
-    }
-
-    private async load_repo(url: string): Promise<IFileSystem | null> {
-        return (
-            (await GitHubFileSystem.fromURLs(url)) ??
-            (await CodebergFileSystem.fromURLs(url))
-        );
     }
 
     private async setup_project(vfs: IFileSystem) {
@@ -172,72 +114,35 @@ class KiCanvasShellElement extends KCUIElement {
             <kc-ui-app>
                 <section class="overlay">
                     <h1>
-                        <img src="images/kicanvas.png" />
-                        KiCanvas
+                        <img src="images/kicanvas.png" alt="" />
+                        kinvas
                     </h1>
                     <p>
-                        KiCanvas is an
-                        <strong>interactive</strong>
-                        ,
-                        <strong>browser-based</strong>
-                        viewer for KiCad schematics and boards. You can learn
-                        more from the
-                        <a href="https://kicanvas.org/home" target="_blank"
-                            >docs</a
-                        >. It's in
-                        <strong>alpha</strong>
-                        so please
-                        <a
-                            href="https://github.com/theacodes/kicanvas/issues/new/choose"
-                            target="_blank">
-                            report any bugs</a
-                        >!
+                        A focused KiCad viewer for inspecting boards, replaying
+                        layout progress, and exporting presentation-ready
+                        graphics.
                     </p>
-                    <input
-                        name="link"
-                        type="text"
-                        placeholder="Paste a GitHub/Codeberg link..."
-                        autofocus />
                     <p>
-                        or drag & drop your KiCad files, or<button
-                            name="open_local"
-                            class="link_button">
+                        Drop your KiCad files here, or
+                        <button name="open_local" class="link_button">
                             open from local
                         </button>
                     </p>
                     <p class="note">
-                        KiCanvas is
-                        <a
-                            href="https://github.com/theacodes/kicanvas"
-                            target="_blank"
-                            >free & open source</a
+                        Files stay in your browser.
+                        <a href="https://github.com/Nigh/kinvas" target="_blank"
+                            >kinvas is open source</a
                         >
-                        and supported by
-                        <a
-                            href="https://github.com/theacodes/kicanvas#special-thanks"
-                            >community donations</a
-                        >
-                        with significant support from
-                        <a href="https://partsbox.com/" target="_blank"
-                            >PartsBox</a
-                        >,
-                        <a href="https://blues.io/" target="_blank">Blues</a>,
-                        <a href="https://blog.mithis.net/" target="_blank"
-                            >Mithro</a
-                        >,
-                        <a href="https://github.com/jeremysf">Jeremy Gordon</a>,
-                        &
-                        <a href="https://github.com/jamesneal" target="_blank"
-                            >James Neal</a
-                        >. KiCanvas runs entirely within your browser, so your
-                        files don't ever leave your machine.
+                        under the MIT License.
                     </p>
                     <p class="github">
                         <a
-                            href="https://github.com/theacodes/kicanvas"
+                            href="https://github.com/Nigh/kinvas"
                             target="_blank"
-                            title="Visit on GitHub">
-                            <img src="images/github-mark-white.svg" />
+                            title="kinvas on GitHub">
+                            <img
+                                src="images/github-mark-white.svg"
+                                alt="GitHub" />
                         </a>
                     </p>
                 </section>

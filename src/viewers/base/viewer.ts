@@ -149,11 +149,11 @@ export abstract class Viewer extends EventTarget {
         // TODO: donot flip drawing sheet and grid
 
         for (const layer of this.layers.in_display_order()) {
-            if (layer.visible && layer.graphics) {
-                let alpha = layer.opacity;
+            if ((layer.visible || layer.highlighted) && layer.graphics) {
+                let alpha = layer.opacity * layer.animation_opacity;
 
                 if (should_dim && !layer.highlighted) {
-                    alpha = 0.25;
+                    alpha *= 0.25;
                 }
 
                 layer.graphics.render(camera, depth, alpha);

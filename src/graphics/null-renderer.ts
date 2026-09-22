@@ -7,7 +7,16 @@
 import type { Color } from "../base/color";
 import { Angle, Matrix3, Vec2 } from "../base/math";
 import { RenderLayer, Renderer } from "./renderer";
-import { Arc, Circle, Polygon, Polyline, type Shape } from "./shapes";
+import {
+    Arc,
+    Circle,
+    Polygon,
+    Polyline,
+    circle_outline,
+    polygon_outline,
+    polyline_outline,
+    type Shape,
+} from "./shapes";
 
 export class NullRenderLayer extends RenderLayer {
     shapes: Shape[] = [];
@@ -57,8 +66,9 @@ export class NullRenderer extends Renderer {
         radius?: number,
         color?: Color,
     ): void {
+        const circle = super.prep_circle(circle_or_center, radius, color);
         this.#active_layer!.shapes.push(
-            super.prep_circle(circle_or_center, radius, color),
+            this.state.outline ? circle_outline(circle) : circle,
         );
     }
 
@@ -87,14 +97,16 @@ export class NullRenderer extends Renderer {
         width?: number,
         color?: Color,
     ): void {
+        const line = super.prep_line(line_or_points, width, color);
         this.#active_layer!.shapes.push(
-            super.prep_line(line_or_points, width, color),
+            ...(this.state.outline ? polyline_outline(line) : [line]),
         );
     }
 
     override polygon(polygon_or_points: Polygon | Vec2[], color?: Color): void {
+        const polygon = super.prep_polygon(polygon_or_points, color);
         this.#active_layer!.shapes.push(
-            super.prep_polygon(polygon_or_points, color),
+            this.state.outline ? polygon_outline(polygon) : polygon,
         );
     }
 

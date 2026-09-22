@@ -34,7 +34,7 @@ section.overlay {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--gradient-purple-blue-dark);
+    background: var(--bg);
 }
 
 section.overlay h1 {
@@ -44,7 +44,7 @@ section.overlay h1 {
     justify-content: center;
     font-size: 5em;
     font-weight: 300;
-    text-shadow: 0 0 5px var(--gradient-purple-red);
+    text-shadow: 0 0 5px var(--color-primary);
 }
 
 section.overlay h1 img {
@@ -58,7 +58,7 @@ section.overlay p {
 }
 
 section.overlay strong {
-    background: var(--gradient-purple-red-highlight);
+    background: var(--color-primary);
     -webkit-background-clip: text;
     -moz-background-clip: text;
     background-clip: text;
@@ -66,26 +66,26 @@ section.overlay strong {
 }
 
 section.overlay a {
-    color: #81eeff;
+    color: var(--color-accent);
 }
 
 section.overlay a:hover {
-    color: #a3f3ff;
+    color: var(--color-secondary);
 }
 
 section.overlay input {
     font-size: 1.5em;
     color: var(--fg);
-    background: var(--gradient-purple-red);
+    background: var(--color-primary);
     max-width: 50%;
 }
 
 section.overlay input::placeholder {
-    color: var(--fg);
+    color: var(--color-primary-content);
 }
 
 section.overlay .link_button {
-    color: #81eeff;
+    color: var(--color-accent);
     background: transparent;
     font-size: 1em;
     font-weight: normal;
@@ -105,12 +105,35 @@ section.overlay .link_button:hover {
 }
 
 section.overlay p.note {
-    color: var(--input-placeholder);
+    color: var(--fg);
+    opacity: 0.7;
     font-size: 1em;
 }
 
 section.overlay p.github img {
     width: 2em;
+}
+
+@media (max-width: 600px) {
+    section.overlay {
+        justify-content: flex-start;
+        overflow-y: auto;
+        padding: 2rem 1.25rem;
+    }
+
+    section.overlay h1 {
+        flex-direction: column;
+        font-size: 3em;
+    }
+
+    section.overlay p {
+        max-width: 100%;
+        font-size: 1.1em;
+    }
+
+    section.overlay p.note {
+        font-size: 0.95em;
+    }
 }
 
 kc-board-viewer,

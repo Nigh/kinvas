@@ -1,10 +1,9 @@
 ---
 name: This made my browser mad!!!
-about: Report issues where KiCanvas doesn't work correctly in your browser
-title: ''
+about: Report issues where kinvas doesn't work correctly in your browser
+title: ""
 labels: browser, bug
-assignees: ''
-
+assignees: ""
 ---
 
 **Describe the bug**
@@ -20,11 +19,11 @@ If applicable, add screenshots or gifs to help explain your problem.
 
 <!--  please complete the following information -->
 
- - OS: <!-- macOS, Windows, etc. -->
- - OS version:
- - Browser: <!-- Chrome, Firefox, etc. -->
- - Browser version:
- - Additional info: <!-- Such as device, screen resolution, etc. that might be relevant to the issue -->
+- OS: <!-- macOS, Windows, etc. -->
+- OS version:
+- Browser: <!-- Chrome, Firefox, etc. -->
+- Browser version:
+- Additional info: <!-- Such as device, screen resolution, etc. that might be relevant to the issue -->
 
 **Additional context**
 Add any other context about the problem here.

@@ -1,4 +1,4 @@
-# <kicanvas-embed\>: The KiCanvas embedded viewer element
+# <kicanvas-embed\>: The kinvas embedded viewer element
 
 <!-- load kicanvas -->
 
@@ -6,7 +6,7 @@
 
 !!! warning "Work in progress"
 
-    KiCanvas is in **alpha**. This is a proposed API with an incomplete implementation. Everything here is subject to change and you should be cautious if using it on your own web page.
+    kinvas is in **alpha**. This proposed API is incomplete and subject to change.
 
 The `<kicanvas-embed>` HTML element embeds one or more KiCad documents onto the page:
 
@@ -24,7 +24,7 @@ The above example shows the most basic usage of the `<kicanvas-embed>` element. 
 
 ## Installation
 
-During alpha, the best way to install KiCanvas is to [download the bundled kicanvas.js](/kicanvas/kicanvas.js), copy it into your project, and include it with a script tag:
+During alpha, download the [bundled kicanvas.js](/kinvas/kicanvas/kicanvas.js), copy it into your project, and include it with a script tag:
 
 ```html
 <script type="module" src="/kicanvas.js"></script>
@@ -107,7 +107,7 @@ This example shows how to use `<kicanvas-source>` along with inline KiCad data. 
     <kicanvas-source>
         (kicad_sch (version 20230121) (generator eeschema) (uuid
         5d5ad125-5ef1-42a1-a410-a0c4ab262ca6) (paper "A4") (title_block (title
-        "KiCanvas inline sources") (date "2023-11-11") ) (lib_symbols ) (text
+        "kinvas inline sources") (date "2023-11-11") ) (lib_symbols ) (text
         "Hello World !!!" (at 90 100 0) (effects (font (size 5 5) (thickness 1)
         bold) (justify left bottom)) (uuid 27eb63d7-7111-4c0e-9985-c1ed90138e31)
         ) (sheet_instances (path "/" (page "1")) ) )
@@ -123,7 +123,7 @@ This example shows how to use `<kicanvas-source>` along with inline KiCad data. 
     <kicanvas-source name="inline.kicad_sch">
         (kicad_sch (version 20230121) (generator eeschema) (uuid
         5d5ad125-5ef1-42a1-a410-a0c4ab262ca6) (paper "A4") (title_block (title
-        "KiCanvas inline sources") (date "2023-11-11") ) (lib_symbols ) (text
+        "kinvas inline sources") (date "2023-11-11") ) (lib_symbols ) (text
         "Inline source file" (at 90 100 0) (effects (font (size 5 5) (thickness 1)
         bold) (justify left bottom)) (uuid 27eb63d7-7111-4c0e-9985-c1ed90138e31)
         ) (sheet_instances (path "/" (page "1")) ) )
@@ -155,8 +155,8 @@ This example shows how to use `<kicanvas-source>` along with inline KiCad data. 
     - `nopreferences` - don't show the user preferences panel. ⚠️
     - `nohelp` - don't show the help panel. ⚠️
 - `src` - the URL of the document to embed. If you want to show multiple documents within a single viewer, you can use multiple child `<kicanvas-source>` elements.
-- `type` - when providing the file source inline, this explicitly sets the file type. If not specified, KiCanvas will attempt to determine the type automatically. If specified, it should be one of `schematic`, `board`, `project`, or `worksheet`.
-- `name` - when providing the file source inline, this explicitly sets the file name. This is typically only necessary when there are multiple files within a project, as KiCad uses the file name to link schematic sheets, drawing sheets, and PCBs together. If unspecified, KiCanvas will generate a file name like `inline_0.kicad_sch`.
+- `type` - when providing the file source inline, this explicitly sets the file type. If not specified, kinvas attempts to determine the type automatically. If specified, it should be one of `schematic`, `board`, `project`, or `worksheet`.
+- `name` - when providing the file source inline, this explicitly sets the file name. This is typically only necessary when there are multiple files within a project, as KiCad uses the file name to link schematic sheets, drawing sheets, and PCBs together. If unspecified, kinvas generates a file name like `inline_0.kicad_sch`.
 - `theme` - sets the color theme to use, valid values are `kicad` and `witchhazel`. ⚠️
 - `zoom` - sets the initial view into the document. ⚠️
     - `objects` - zooms to show all visible objects (default). ⚠️
@@ -176,5 +176,5 @@ This example shows how to use `<kicanvas-source>` along with inline KiCad data. 
 | ⚠️`kicanvas:documentchange` | The currently displayed document is changed, either through user interaction or programmatically. |
 | ⚠️`kicanvas:error`          | An error occurs while loading source files                                                        |
 | ⚠️`kicanvas:load`           | All sources files have been successfully loaded                                                   |
-| ⚠️`kicanvas:loadstart`      | KiCanvas begins loading source files                                                              |
+| ⚠️`kicanvas:loadstart`      | kinvas begins loading source files                                                                |
 | ⚠️`kicanvas:select`         | The user selects (or deselects) an object within the document                                     |

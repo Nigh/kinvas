@@ -1,6 +1,6 @@
 # Roadmap
 
-KiCanvas is very early in its development and there's a ton of stuff that hasn't been done. The current top priority is parsing and rendering, while the next focus will be the embedding API.
+kinvas is very early in its development. The current priority is parsing and rendering, followed by the embedding API.
 
 Here's a non-exhaustive roadmap:
 
@@ -39,7 +39,7 @@ Here's a non-exhaustive roadmap:
     - [ ] Copy selected item for pasting into KiCad
     - [x] Theming
     - [ ] Onion view
-- [x] Standalone web application (kicanvas.org)
+- [x] Standalone web application
     - [x] Project viewer
         - [x] Loading files and projects from GitHub
         - [x] Navigating hierarchical sheets
@@ -71,13 +71,13 @@ Here's a non-exhaustive roadmap:
 
 ## Non-goals
 
-KiCanvas also has a list of specific non-goals. At this time, we won't be adding:
+kinvas also has specific non-goals. At this time, we won't add:
 
-- Editing of any kind - KiCanvas is read only and that assumption is baked deeply within the code.
+- Editing of any kind - kinvas is read only and that assumption is baked deeply within the code.
 - Offline rendering
 - 3D board and component rendering
 - Server-side usage
 - Comparison/visual diffing
-- Specific integrations with front-end frameworks (React, Vue, etc.) - KiCanvas is built using [Web Components] and should work out of the box with all web frameworks.
+- Specific integrations with front-end frameworks (React, Vue, etc.) - kinvas uses [Web Components] and should work with all web frameworks.
 
 [Web Components]: https://developer.mozilla.org/en-US/docs/Web/API/Web_components

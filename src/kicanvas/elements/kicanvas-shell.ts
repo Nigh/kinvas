@@ -115,17 +115,12 @@ class KiCanvasShellElement extends KCUIElement {
                 <section class="overlay">
                     <h1>
                         <img src="images/kicanvas.png" alt="" />
-                        KiCanvas Alto
+                        kinvas
                     </h1>
                     <p>
-                        A focused
-                        <a
-                            href="https://github.com/theacodes/kicanvas"
-                            target="_blank"
-                            >KiCanvas</a
-                        >
-                        fork for inspecting KiCad boards, replaying layout
-                        progress, and exporting presentation-ready graphics.
+                        A focused KiCad viewer for inspecting boards, replaying
+                        layout progress, and exporting presentation-ready
+                        graphics.
                     </p>
                     <p>
                         Drop your KiCad files here, or
@@ -135,18 +130,16 @@ class KiCanvasShellElement extends KCUIElement {
                     </p>
                     <p class="note">
                         Files stay in your browser.
-                        <a
-                            href="https://github.com/Nigh/kicanvas-alto"
-                            target="_blank"
-                            >KiCanvas Alto is open source</a
+                        <a href="https://github.com/Nigh/kinvas" target="_blank"
+                            >kinvas is open source</a
                         >
                         under the MIT License.
                     </p>
                     <p class="github">
                         <a
-                            href="https://github.com/Nigh/kicanvas-alto"
+                            href="https://github.com/Nigh/kinvas"
                             target="_blank"
-                            title="KiCanvas Alto on GitHub">
+                            title="kinvas on GitHub">
                             <img
                                 src="images/github-mark-white.svg"
                                 alt="GitHub" />

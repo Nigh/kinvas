@@ -1,31 +1,31 @@
 # Development
 
-This page provides some technical background for those wishing to dig into KiCanvas's source code.
+This page provides technical background for those wishing to explore kinvas source code.
 
 ## Contributing
 
-Contributions are welcome! However, since KiCanvas is in a super early stage please file an issue before you start working on something so we can coordinate. Also, please read our [Code of Conduct].
+Contributions are welcome! Since kinvas is in an early stage, please file an issue before starting work so we can coordinate. Also read our [Code of Conduct].
 
 ## Technical overview
 
-KiCanvas is written in modern vanilla [TypeScript] and uses the [Canvas] element and [WebGL] for rendering. KiCanvas's user interface is built using [Web Components].
+kinvas is written in modern vanilla [TypeScript] and uses the [Canvas] element and [WebGL] for rendering. Its user interface uses [Web Components].
 
-KiCanvas notably does not have any runtime dependencies. Everything it needs to work is bundled together and nothing pollutes the global namespace. This is critical to KiCanvas's goal of being easy to embed.
+kinvas has no runtime dependencies. Everything it needs is bundled, and nothing pollutes the global namespace. This supports easy embedding.
 
 ## Source code organization
 
-KiCanvas's source code under `./src` is organized into the following:
+kinvas source code under `./src` is organized as follows:
 
 - `base` contains generic, widely applicable utilities for working with JavaScript, TypeScript, the DOM, and math. These are the sort of things you'd use across multiple, unrelated projects.
 - `kicad` contains the KiCad data layer and text layout implementation. This is where parsers for KiCad files and associated models live.
-- `graphics` contains the rendering engine. It is somewhat generic- it handles rendering primitives such as lines, circles, and polygons, but is also tailored to KiCanvas's needs in specific ways.
-- `viewers` contains classes that implement viewers for different KiCad documents. Viewers handle creating geometry using "Painters" and managing "Layers" for the renderer to draw. Viewers do not provide a user interface on their own, they're designed with high-level APIs that let various user interface elements control the viewer.
-- `kc-ui` contains generic, low-level web components used to build KiCanvas's user interface. Elements in here are generic enough to be re-used in other projects, but may be slightly tailored to KiCanvas's needs. For example, `<kc-ui-button>` and `<kc-ui-icon>`.
-- `kicanvas` contains the KiCanvas application and its elements. Elements here implement KiCanvas functionality, such as `<kc-project-panel>` and `<kc-symbols-panel>`.
+- `graphics` contains the rendering engine. It handles primitives such as lines, circles, and polygons, with behavior tailored to kinvas.
+- `viewers` contains classes that implement viewers for different KiCad documents. Viewers create geometry using "Painters" and manage renderer "Layers". Viewers expose high-level APIs instead of providing a user interface.
+- `kc-ui` contains generic, low-level web components used to build the kinvas user interface. For example, `<kc-ui-button>` and `<kc-ui-icon>`.
+- `kicanvas` contains the kinvas application and its elements. Elements here implement kinvas functionality, such as `<kc-project-panel>` and `<kc-symbols-panel>`.
 
-[KiCanvas]: https://kicanvas.org
+[kinvas]: https://nigh.github.io/kinvas/
 [TypeScript]: https://typescript.dev
 [Canvas]: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
 [WebGL]: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API
 [Web Components]: https://developer.mozilla.org/en-US/docs/Web/API/Web_components
-[Code of Conduct]: https://github.com/theacodes/kicanvas/blob/main/CODE_OF_CONDUCT.md
+[Code of Conduct]: https://github.com/Nigh/kinvas/blob/main/CODE_OF_CONDUCT.md

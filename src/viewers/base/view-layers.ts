@@ -48,10 +48,14 @@ export class ViewLayer implements IDisposable {
     color: Color;
 
     /**
-     * The layer opacity is used when rendering the layer.
+     * User-controlled layer opacity.
      */
-    opacity: number;
+    opacity = 1;
 
+    /**
+     * Transient animation opacity, kept separate from user settings.
+     */
+    animation_opacity = 1;
     /**
      * Board or schematic items on this layer.
      */

@@ -114,66 +114,42 @@ class KiCanvasShellElement extends KCUIElement {
             <kc-ui-app>
                 <section class="overlay">
                     <h1>
-                        <img src="images/kicanvas.png" />
-                        KiCanvas
+                        <img src="images/kicanvas.png" alt="" />
+                        KiCanvas Alto
                     </h1>
                     <p>
-                        KiCanvas is an
-                        <strong>interactive</strong>
-                        ,
-                        <strong>browser-based</strong>
-                        viewer for KiCad schematics and boards. You can learn
-                        more from the
-                        <a href="https://kicanvas.org/home" target="_blank"
-                            >docs</a
-                        >. It's in
-                        <strong>alpha</strong>
-                        so please
+                        A focused
                         <a
-                            href="https://github.com/theacodes/kicanvas/issues/new/choose"
-                            target="_blank">
-                            report any bugs</a
-                        >!
+                            href="https://github.com/theacodes/kicanvas"
+                            target="_blank"
+                            >KiCanvas</a
+                        >
+                        fork for inspecting KiCad boards, replaying layout
+                        progress, and exporting presentation-ready graphics.
                     </p>
                     <p>
-                        Drag & drop your KiCad files, or
+                        Drop your KiCad files here, or
                         <button name="open_local" class="link_button">
                             open from local
                         </button>
                     </p>
                     <p class="note">
-                        KiCanvas is
+                        Files stay in your browser.
                         <a
-                            href="https://github.com/theacodes/kicanvas"
+                            href="https://github.com/Nigh/kicanvas-alto"
                             target="_blank"
-                            >free & open source</a
+                            >KiCanvas Alto is open source</a
                         >
-                        and supported by
-                        <a
-                            href="https://github.com/theacodes/kicanvas#special-thanks"
-                            >community donations</a
-                        >
-                        with significant support from
-                        <a href="https://partsbox.com/" target="_blank"
-                            >PartsBox</a
-                        >,
-                        <a href="https://blues.io/" target="_blank">Blues</a>,
-                        <a href="https://blog.mithis.net/" target="_blank"
-                            >Mithro</a
-                        >,
-                        <a href="https://github.com/jeremysf">Jeremy Gordon</a>,
-                        &
-                        <a href="https://github.com/jamesneal" target="_blank"
-                            >James Neal</a
-                        >. KiCanvas runs entirely within your browser, so your
-                        files don't ever leave your machine.
+                        under the MIT License.
                     </p>
                     <p class="github">
                         <a
-                            href="https://github.com/theacodes/kicanvas"
+                            href="https://github.com/Nigh/kicanvas-alto"
                             target="_blank"
-                            title="Visit on GitHub">
-                            <img src="images/github-mark-white.svg" />
+                            title="KiCanvas Alto on GitHub">
+                            <img
+                                src="images/github-mark-white.svg"
+                                alt="GitHub" />
                         </a>
                     </p>
                 </section>

@@ -14,6 +14,9 @@ import { PrimitiveSet } from "./vector";
  * WebGL2-based renderer
  */
 export class WebGL2Renderer extends Renderer {
+    /** Render filled primitives as outlines. */
+    outline_mode = false;
+
     /** Graphics layers */
     #layers: WebGL2RenderLayer[] = [];
 
@@ -154,7 +157,20 @@ export class WebGL2Renderer extends Renderer {
             return;
         }
 
-        this.#active_layer!.geometry.add_circle(circle);
+        if (this.outline_mode) {
+            const points = Array.from({ length: 33 }, (_, i) => {
+                const angle = (i / 32) * Math.PI * 2;
+                return new Vec2(
+                    circle.center.x + Math.cos(angle) * circle.radius,
+                    circle.center.y + Math.sin(angle) * circle.radius,
+                );
+            });
+            this.#active_layer!.geometry.add_line(
+                new Polyline(points, 0.15, circle.color),
+            );
+        } else {
+            this.#active_layer!.geometry.add_circle(circle);
+        }
     }
 
     override line(
@@ -178,7 +194,17 @@ export class WebGL2Renderer extends Renderer {
             return;
         }
 
-        this.#active_layer!.geometry.add_polygon(polygon);
+        if (this.outline_mode && polygon.points.length) {
+            this.#active_layer!.geometry.add_line(
+                new Polyline(
+                    [...polygon.points, polygon.points[0]!],
+                    0.15,
+                    polygon.color,
+                ),
+            );
+        } else {
+            this.#active_layer!.geometry.add_polygon(polygon);
+        }
     }
 
     override get layers(): Iterable<RenderLayer> {

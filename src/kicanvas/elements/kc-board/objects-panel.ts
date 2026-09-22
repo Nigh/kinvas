@@ -49,6 +49,17 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                     break;
             }
         });
+
+        delegate(
+            this.renderRoot,
+            'input[name="sketch-mode"]',
+            "change",
+            (e) => {
+                this.viewer.sketch_mode = (
+                    e.target as HTMLInputElement
+                ).checked;
+            },
+        );
     }
 
     override render() {
@@ -57,6 +68,16 @@ export class KCBoardObjectsPanelElement extends KCUIElement {
                 <kc-ui-panel-title title="Objects"></kc-ui-panel-title>
                 <kc-ui-panel-body padded>
                     <kc-ui-control-list>
+                        <kc-ui-control>
+                            <label>Display mode</label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="sketch-mode"
+                                    checked="${this.viewer.sketch_mode}" />
+                                Outline (sketch)
+                            </label>
+                        </kc-ui-control>
                         <kc-ui-control>
                             <label>Tracks</label>
                             <kc-ui-range

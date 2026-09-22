@@ -6,12 +6,19 @@
 
 import { assert } from "chai";
 import * as board from "../../src/kicad/board";
+import { BBox } from "../../src/base/math";
+import kicad_theme from "../../src/kicanvas/themes/kicad-default";
+import { ViewLayer, ViewLayerSet } from "../../src/viewers/base/view-layers";
 import {
+    LayoutAnimationController,
     LayoutTimeline,
+    base_layer_name,
     bucket_layer_name,
     bucket_of,
-    base_layer_name,
 } from "../../src/viewers/board/animation";
+import { export_board_svg } from "../../src/viewers/board/export-svg";
+import { LayerSet } from "../../src/viewers/board/layers";
+import type { BoardViewer } from "../../src/viewers/board/viewer";
 
 import traces_pcb_src from "./files/traces.kicad_pcb";
 import vias_pcb_src from "./files/vias.kicad_pcb";
@@ -124,5 +131,48 @@ suite("board.animation.LayoutTimeline", function () {
         assert.equal(bucket_layer_name(":F.Cu:Zones", 1), ":F.Cu:Zones@anim:1");
         assert.equal(base_layer_name(":F.Cu:Zones@anim:1"), ":F.Cu:Zones");
         assert.equal(bucket_of(":F.Cu:Zones@anim:1"), 1);
+    });
+
+    test("animation fade preserves user opacity", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", traces_pcb_src);
+        const timeline = new LayoutTimeline(pcb);
+        const layers = new ViewLayerSet();
+        const layer = new ViewLayer(layers, bucket_layer_name("F.Cu", 0));
+        layer.opacity = 0.35;
+        layers.add(layer);
+        const viewer = {
+            layers,
+            draw() {},
+        } as unknown as BoardViewer;
+        const animation = new LayoutAnimationController(viewer, timeline);
+
+        animation.seek(timeline.duration);
+
+        assert.equal(layer.opacity, 0.35);
+        assert.equal(layer.animation_opacity, 1);
+    });
+});
+
+suite("board export", function () {
+    test("static SVG honors bounds, visibility, opacity, and outline mode", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", footprints_pcb_src);
+        const layers = new LayerSet(pcb, kicad_theme.board);
+        for (const layer of layers.in_order()) {
+            layer.opacity = 0.4;
+        }
+
+        const svg = export_board_svg(pcb, layers, kicad_theme.board, {
+            bbox: new BBox(1, 2, 30, 40),
+            outline: true,
+        });
+
+        assert.include(svg, 'viewBox="1 2 30 40"');
+        assert.include(svg, 'opacity="0.4"');
+        assert.notInclude(svg, "<set ");
+        assert.match(svg, /<(circle|polygon)[^>]+fill="none"/);
+
+        layers.by_name("F.Cu")!.visible = false;
+        const hidden_svg = export_board_svg(pcb, layers, kicad_theme.board);
+        assert.notInclude(hidden_svg, 'data-layer="F.Cu"');
     });
 });

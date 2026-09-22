@@ -33,22 +33,21 @@ export class KCHelpPanel extends KCUIElement {
                 <kc-ui-panel-body>
                     <p>
                         You're using
-                        <a href="https://kicanvas.org/home">KiCanvas</a>, an
+                        <a href="https://nigh.github.io/kinvas/">kinvas</a>, an
                         interactive, browser-based viewer for KiCad schematics
                         and boards.
                     </p>
                     <p>
-                        KiCanvas is very much in <strong>alpha</strong>, so
-                        please
+                        kinvas is in <strong>alpha</strong>, so please
                         <a
-                            href="https://github.com/theacodes/kicanvas/issues/new/choose"
+                            href="https://github.com/Nigh/kinvas/issues/new/choose"
                             target="_blank"
                             >file an issue on GitHub</a
                         >
                         if you run into any bugs.
                     </p>
                     <p>
-                        KiCanvas is developed by
+                        kinvas is developed by
                         <a href="https://thea.codes" target="_blank"
                             >Thea Flowers</a
                         >

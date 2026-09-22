@@ -122,7 +122,7 @@ export class DrawingSheet {
                 return "/";
             case "KICAD_VERSION":
                 // KiCad Version
-                return "KiCanvas Alpha";
+                return "kinvas Alpha";
         }
         return this.document?.resolve_text_var(name);
     }

@@ -1,19 +1,19 @@
-# KiCanvas
+# kinvas
 
-[KiCanvas] is an **interactive**, **browser-based** viewer for [KiCad] schematics and boards. You can try it out for yourself at https://kicanvas.org.
+[kinvas] is an **interactive**, **browser-based** viewer for [KiCad] schematics and boards. Try it at https://nigh.github.io/kinvas/.
 
 https://user-images.githubusercontent.com/250995/233475339-43c89a26-c825-4999-9d0a-7bde690c96ca.mp4
 
-**NOTE**: KiCanvas is currently in **early alpha**. There will be bugs and missing features. Please take a look at [known issues](#known-issues) and [file an issue] if you run into trouble.
+**NOTE**: kinvas is currently in **early alpha**. There will be bugs and missing features. Please take a look at [known issues](#known-issues) and [file an issue] if you run into trouble.
 
-You can also use KiCanvas on your own websites using the [embedding API]. It's written in modern vanilla [TypeScript] and uses the [Canvas] element and [WebGL] for rendering. You can learn more on the [development page][development documentation].
+You can also use kinvas on your own websites using the [embedding API]. It's written in modern vanilla [TypeScript] and uses the [Canvas] element and [WebGL] for rendering. You can learn more on the [development page][development documentation].
 
-KiCanvas is developed by [Thea Flowers](https://thea.codes) with financial support from her [sponsors].
+kinvas is developed by [Thea Flowers](https://thea.codes) with financial support from her [sponsors].
 
-[KiCanvas]: https://kicanvas.org
+[kinvas]: https://nigh.github.io/kinvas/
 [KiCad]: https://kicad.org
-[file an issue]: https://github.com/theacodes/kicanvas/issues/new/choose
-[embedding API]: https://kicanvas.org/embedding
+[file an issue]: https://github.com/Nigh/kinvas/issues/new/choose
+[embedding API]: https://nigh.github.io/kinvas/embedding/
 [TypeScript]: https://typescript.dev
 [Canvas]: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
 [WebGL]: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API
@@ -22,37 +22,37 @@ KiCanvas is developed by [Thea Flowers](https://thea.codes) with financial suppo
 
 ## Status and roadmap
 
-KiCanvas is very early in its development and there's a ton of stuff that hasn't been done, there's a [roadmap] that you can use to get an idea of the overall status of the project.
+kinvas is very early in its development and there's a ton of stuff that hasn't been done. The [roadmap] gives an overview of the project status.
 
-[roadmap]: https://kicanvas.org/roadmap
+[roadmap]: https://nigh.github.io/kinvas/roadmap/
 
 ## Known issues
 
 In general, please check the [GitHub issues] page before filing new issues. Some high-level things that we know won't work:
 
-- Any KiCad 5 files, KiCanvas can only parse files from KiCad 6 and later.
+- Any KiCad 5 files; kinvas can only parse files from KiCad 6 and later.
 - Some KiCad 7 features might not be fully implemented, such as custom fonts in schematics.
 - Browsers other than desktop Chrome, Firefox, and Safari may run into issues, as we aren't currently running automated tests against other browsers. We welcome issues related to browser compatibility, just make sure it hasn't already been reported.
 
-[GitHub issues]: https://github.com/theacodes/kicanvas/issues
+[GitHub issues]: https://github.com/Nigh/kinvas/issues
 
 ## FAQ
 
 Take a look at our [FAQ] page for commonly asked questions and answers.
 
-[FAQ]: https://kicanvas.org/home/#faq
+[FAQ]: https://nigh.github.io/kinvas/home/#faq
 
 ## License and contributing
 
-KiCanvas is open source! Please take a chance to read the [LICENSE](LICENSE.md) file.
+kinvas is open source! Please read the [LICENSE](LICENSE.md) file.
 
-Contributions are welcome! However, since KiCanvas is in a super early stage please file an issue before you start working on something so we can coordinate. It's also recommended to take a moment and read over the [development documentation].
+Contributions are welcome! Since kinvas is in an early stage, please file an issue before starting work so we can coordinate. Also read the [development documentation].
 
-[development documentation]: https://kicanvas.org/development
+[development documentation]: https://nigh.github.io/kinvas/development/
 
 ## Special thanks
 
-KiCanvas would not be possible without the incredible financial support of our [sponsors]. KiCanvas received significant support from the following individual and organizations:
+kinvas would not be possible without the financial support of our [sponsors]. The following people and organizations provided significant support:
 
 - [PartsBox](https://partsbox.com/)
 - [Blues](https://blues.io/)

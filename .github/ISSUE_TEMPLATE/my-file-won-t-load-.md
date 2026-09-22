@@ -1,10 +1,9 @@
 ---
 name: My file won't load!
-about: Report issues where KiCanvas fails to load a file
-title: ''
+about: Report issues where kinvas fails to load a file
+title: ""
 labels: bug, parsing
-assignees: ''
-
+assignees: ""
 ---
 
-<!-- Please include the file that KiCanvas failed to load. If you don't want the file to be public, please let us know and we can arrange for you to send it to us privately. -->
+<!-- Please include the file that kinvas failed to load. If you don't want the file to be public, let us know and we can arrange a private transfer. -->

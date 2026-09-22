@@ -19,15 +19,15 @@ import {
     bucket_layer_name,
 } from "./animation";
 import { LayerSet } from "./layers";
-import { BoardPainter } from "./painter";
+import { BoardPainter, type BoardSketchModes } from "./painter";
 
 export interface SVGExportOptions {
     /** Include layers that are hidden in the viewer. Defaults to false. */
     include_hidden?: boolean;
     /** Export bounds in board coordinates. Defaults to board extents. */
     bbox?: BBox;
-    /** Render filled shapes as outlines. */
-    outline?: boolean;
+    /** Object types rendered as outlines. */
+    sketch_modes?: Readonly<Partial<BoardSketchModes>>;
 }
 
 interface ExportLayer {
@@ -47,7 +47,12 @@ export function export_layout_animation_svg(
     options: SVGExportOptions = {},
 ): string {
     const timeline = new LayoutTimeline(board);
-    const export_layers = paint_layers(board, theme, timeline);
+    const export_layers = paint_layers(
+        board,
+        theme,
+        timeline,
+        options.sketch_modes,
+    );
     const layers: ExportLayer[] = [];
 
     for (const view_layer of export_layers.in_display_order()) {
@@ -81,7 +86,12 @@ export function export_board_svg(
     options: SVGExportOptions = {},
     timeline: LayoutTimeline | null = null,
 ): string {
-    const export_layers = paint_layers(board, theme, timeline);
+    const export_layers = paint_layers(
+        board,
+        theme,
+        timeline,
+        options.sketch_modes,
+    );
     const layers: ExportLayer[] = [];
 
     for (const view_layer of export_layers.in_display_order()) {
@@ -115,10 +125,12 @@ function paint_layers(
     board: KicadPCB,
     theme: ConstructorParameters<typeof LayerSet>[1],
     timeline: LayoutTimeline | null,
+    sketch_modes?: Readonly<Partial<BoardSketchModes>>,
 ) {
     const layers = new LayerSet(board, theme);
     const painter = new BoardPainter(new NullRenderer(), layers, theme);
     painter.timeline = timeline;
+    painter.sketch_modes = { ...painter.sketch_modes, ...sketch_modes };
     painter.paint(board);
     return layers;
 }
@@ -140,7 +152,6 @@ function build_svg(
     }
 
     const background = theme.background?.to_css() ?? "#000";
-    const outline_width = Math.max(bbox.w, bbox.h) / 1000;
     const parts = [
         `<svg xmlns="http://www.w3.org/2000/svg" ` +
             `viewBox="${fmt(bbox.x)} ${fmt(bbox.y)} ${fmt(bbox.w)} ${fmt(
@@ -170,9 +181,7 @@ function build_svg(
             );
         }
         for (const shape of layer.shapes) {
-            parts.push(
-                shape_to_svg(shape, options.outline ?? false, outline_width),
-            );
+            parts.push(shape_to_svg(shape));
         }
         parts.push(`</g>`);
     }
@@ -193,24 +202,12 @@ function css_color(color: { to_css(): string } | false | null): string {
     return color ? color.to_css() : "none";
 }
 
-function shape_to_svg(
-    shape: Circle | Arc | Polygon | Polyline,
-    outline: boolean,
-    outline_width: number,
-): string {
+function shape_to_svg(shape: Circle | Arc | Polygon | Polyline): string {
     if ("radius" in shape && "center" in shape && !("points" in shape)) {
         if ("start_angle" in shape) {
             return arc_to_svg(shape as Arc);
         }
         const circle = shape as Circle;
-        if (outline) {
-            return (
-                `<circle cx="${fmt(circle.center.x)}" ` +
-                `cy="${fmt(circle.center.y)}" r="${fmt(circle.radius)}" ` +
-                `fill="none" stroke="${css_color(circle.color)}" ` +
-                `stroke-width="${fmt(outline_width)}"/>`
-            );
-        }
         return (
             `<circle cx="${fmt(circle.center.x)}" ` +
             `cy="${fmt(circle.center.y)}" r="${fmt(circle.radius)}" ` +
@@ -230,14 +227,6 @@ function shape_to_svg(
             );
         }
         const polygon = shape as Polygon;
-        if (outline) {
-            return (
-                `<polygon points="${points}" fill="none" ` +
-                `stroke="${css_color(polygon.color)}" ` +
-                `stroke-width="${fmt(outline_width)}" ` +
-                `stroke-linejoin="round"/>`
-            );
-        }
         return (
             `<polygon points="${points}" ` +
             `fill="${css_color(polygon.color)}"/>`

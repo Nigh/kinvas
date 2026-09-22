@@ -154,22 +154,28 @@ suite("board.animation.LayoutTimeline", function () {
 });
 
 suite("board export", function () {
-    test("static SVG honors bounds, visibility, opacity, and outline mode", function () {
-        const pcb = new board.KicadPCB("test.kicad_pcb", footprints_pcb_src);
+    test("static SVG honors bounds, visibility, opacity, and track sketch", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", traces_pcb_src);
         const layers = new LayerSet(pcb, kicad_theme.board);
         for (const layer of layers.in_order()) {
             layer.opacity = 0.4;
         }
 
-        const svg = export_board_svg(pcb, layers, kicad_theme.board, {
+        const regular_svg = export_board_svg(pcb, layers, kicad_theme.board, {
             bbox: new BBox(1, 2, 30, 40),
-            outline: true,
+        });
+        const sketch_svg = export_board_svg(pcb, layers, kicad_theme.board, {
+            bbox: new BBox(1, 2, 30, 40),
+            sketch_modes: { tracks: true },
         });
 
-        assert.include(svg, 'viewBox="1 2 30 40"');
-        assert.include(svg, 'opacity="0.4"');
-        assert.notInclude(svg, "<set ");
-        assert.match(svg, /<(circle|polygon)[^>]+fill="none"/);
+        assert.include(sketch_svg, 'viewBox="1 2 30 40"');
+        assert.include(sketch_svg, 'opacity="0.4"');
+        assert.notInclude(sketch_svg, "<set ");
+        assert.isAbove(
+            sketch_svg.split("<polyline").length,
+            regular_svg.split("<polyline").length,
+        );
 
         layers.by_name("F.Cu")!.visible = false;
         const hidden_svg = export_board_svg(pcb, layers, kicad_theme.board);

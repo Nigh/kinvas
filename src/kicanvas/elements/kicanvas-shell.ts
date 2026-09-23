@@ -114,7 +114,7 @@ class KiCanvasShellElement extends KCUIElement {
             <kc-ui-app>
                 <section class="overlay">
                     <h1>
-                        <img src="images/kicanvas.png" alt="" />
+                        <img src="icon.webp" alt="" />
                         kinvas
                     </h1>
                     <p>

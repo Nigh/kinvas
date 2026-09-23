@@ -177,7 +177,11 @@ suite("kicad.board.KicadPCB(): board parsing", function () {
             layer: "Dwgs.User",
             width: 0.3,
             fill: "none",
+            radius: 2,
         } as Partial<board.GrRect>);
+        assert.closeTo(rect.outline_points[0]!.x, 18, 1e-10);
+        assert.closeTo(rect.outline_points[0]!.y, 0, 1e-10);
+        assert.deepEqual(rect.outline_points.at(-1), rect.outline_points[0]);
 
         const circle = pcb.drawings[2] as board.GrCircle;
         assert(circle instanceof board.GrCircle);
@@ -809,6 +813,7 @@ suite("kicad.board.Footprint()", function () {
             layer: "F.SilkS",
             width: 0.12,
             fill: "none",
+            radius: 1,
         } as Partial<board.FpRect>);
 
         assert(circle instanceof board.FpCircle);

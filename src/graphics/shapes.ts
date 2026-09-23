@@ -144,32 +144,63 @@ export function polyline_outline(line: Polyline): Polyline[] {
         return [line];
     }
 
+    const points = line.points.filter(
+        (point, index) => index === 0 || !point.equals(line.points[index - 1]),
+    );
+    const closed = points[0]!.equals(points.at(-1));
+    if (closed) points.pop();
+    if (points.length < 2) return [line];
+
     const half_width = line.width / 2;
     const edge_width = Math.min(outline_width, line.width / 4);
-    const offsets = line.points.map((point, index) => {
+    const offsets = points.map((point, index) => {
+        const previous_index = index === 0 ? points.length - 1 : index - 1;
+        const next_index = index === points.length - 1 ? 0 : index + 1;
         const previous =
-            index > 0
-                ? point.sub(line.points[index - 1]!).normal.normalize()
-                : null;
+            !closed && index === 0
+                ? null
+                : point.sub(points[previous_index]!).normal.normalize();
         const next =
-            index < line.points.length - 1
-                ? line.points[index + 1]!.sub(point).normal.normalize()
-                : null;
+            !closed && index === points.length - 1
+                ? null
+                : points[next_index]!.sub(point).normal.normalize();
 
         if (!previous) return next!.multiply(half_width);
         if (!next) return previous.multiply(half_width);
 
-        const miter = previous.add(next).normalize();
+        const sum = previous.add(next);
+        if (sum.squared_magnitude < 1e-12) {
+            return next.multiply(half_width);
+        }
+        const miter = sum.normalize();
         const alignment = Math.abs(miter.x * next.x + miter.y * next.y);
-        return miter.multiply(half_width / Math.max(alignment, 0.25));
+        return miter.multiply(
+            Math.min(half_width / Math.max(alignment, 0.25), half_width * 4),
+        );
     });
-    const left = line.points.map((point, index) => point.add(offsets[index]!));
-    const right = line.points.map((point, index) => point.sub(offsets[index]!));
+    const left = points.map((point, index) => point.add(offsets[index]!));
+    const right = points.map((point, index) => point.sub(offsets[index]!));
 
     return [
-        new Polyline(left, edge_width, line.color),
-        new Polyline(right, edge_width, line.color),
-        new Polyline([left[0]!, right[0]!], edge_width, line.color),
-        new Polyline([left.at(-1)!, right.at(-1)!], edge_width, line.color),
+        new Polyline(
+            closed ? [...left, left[0]!] : left,
+            edge_width,
+            line.color,
+        ),
+        new Polyline(
+            closed ? [...right, right[0]!] : right,
+            edge_width,
+            line.color,
+        ),
+        ...(closed
+            ? []
+            : [
+                  new Polyline([left[0]!, right[0]!], edge_width, line.color),
+                  new Polyline(
+                      [left.at(-1)!, right.at(-1)!],
+                      edge_width,
+                      line.color,
+                  ),
+              ]),
     ];
 }

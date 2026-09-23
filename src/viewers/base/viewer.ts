@@ -142,23 +142,26 @@ export abstract class Viewer extends EventTarget {
         }
 
         // Render all layers in display order (back to front)
-        let depth = 0.01;
         const camera = this.viewport.camera.matrix;
         const should_dim = this.layers.is_any_layer_highlighted();
+        const layers = Array.from(this.layers.in_display_order()).filter(
+            (layer) => (layer.visible || layer.highlighted) && layer.graphics,
+        );
 
         // TODO: donot flip drawing sheet and grid
 
-        for (const layer of this.layers.in_display_order()) {
-            if ((layer.visible || layer.highlighted) && layer.graphics) {
-                let alpha = layer.opacity * layer.animation_opacity;
+        for (const [index, layer] of layers.entries()) {
+            let alpha = layer.opacity * layer.animation_opacity;
 
-                if (should_dim && !layer.highlighted) {
-                    alpha *= 0.25;
-                }
-
-                layer.graphics.render(camera, depth, alpha);
-                depth += 0.01;
+            if (should_dim && !layer.highlighted) {
+                alpha *= 0.25;
             }
+
+            layer.graphics!.render(
+                camera,
+                (index + 1) / (layers.length + 1),
+                alpha,
+            );
         }
     }
 

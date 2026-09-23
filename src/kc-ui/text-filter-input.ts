@@ -17,6 +17,11 @@ export class KCUITextFilterInputElement extends KCUIElement {
                 align-content: center;
                 position: relative;
                 border-bottom: 1px solid var(--grid-outline);
+                transition: border-color var(--transition-time-short) ease;
+            }
+
+            :host(:focus-within) {
+                border-bottom-color: var(--input-accent);
             }
 
             kc-ui-icon.before {
@@ -42,6 +47,10 @@ export class KCUITextFilterInputElement extends KCUIElement {
                 font: inherit;
                 background: var(--input-bg);
                 color: var(--input-fg);
+            }
+
+            input::placeholder {
+                color: var(--input-placeholder);
             }
 
             input:placeholder-shown + button {

@@ -22,6 +22,8 @@ import {
     BoardPainter,
     type BoardObjectType,
     type BoardSketchModes,
+    type BoardVisibleModes,
+    type BoardVisibleType,
 } from "./painter";
 
 export type ContextMenuCallback = (
@@ -52,6 +54,15 @@ export class BoardViewer extends DocumentViewer<
         pads: false,
         holes: false,
         zones: false,
+    };
+    #visible_modes: BoardVisibleModes = {
+        tracks: true,
+        vias: true,
+        pads: true,
+        holes: true,
+        zones: true,
+        grid: true,
+        page: true,
     };
 
     get board(): board_items.KicadPCB {
@@ -101,6 +112,11 @@ export class BoardViewer extends DocumentViewer<
 
     protected override on_painter_created(painter: BoardPainter) {
         painter.sketch_modes = this.#sketch_modes;
+        painter.visible_modes = this.#visible_modes;
+        this.layers.by_name(LayerNames.grid)!.visible =
+            this.#visible_modes.grid;
+        this.layers.by_name(LayerNames.drawing_sheet)!.visible =
+            this.#visible_modes.page;
         if (this.#animation_timeline) {
             painter.timeline = this.#animation_timeline;
         }
@@ -143,7 +159,7 @@ export class BoardViewer extends DocumentViewer<
         this.#animation_timeline = timeline;
         timeline.current_time = 0;
 
-        this.paint();
+        this.repaint_preserving_layer_state();
 
         this.#animation_controller = new LayoutAnimationController(
             this,
@@ -327,6 +343,29 @@ export class BoardViewer extends DocumentViewer<
 
     get sketch_modes(): Readonly<BoardSketchModes> {
         return this.#sketch_modes;
+    }
+
+    get visible_modes(): Readonly<BoardVisibleModes> {
+        return this.#visible_modes;
+    }
+
+    visible_for(object: BoardVisibleType): boolean {
+        return this.#visible_modes[object];
+    }
+
+    set_visible(object: BoardVisibleType, value: boolean) {
+        if (value === this.#visible_modes[object]) return;
+        this.#visible_modes[object] = value;
+
+        if (object === "grid" || object === "page") {
+            const layer_name =
+                object === "grid" ? LayerNames.grid : LayerNames.drawing_sheet;
+            this.layers.by_name(layer_name)!.visible = value;
+            this.draw();
+            return;
+        }
+
+        this.repaint_preserving_layer_state();
     }
 
     sketch_mode_for(object: BoardObjectType): boolean {

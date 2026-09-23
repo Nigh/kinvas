@@ -136,29 +136,29 @@ export class KCPreferencesPanel extends KCUIElement {
                     <kc-ui-control-list>
                         <kc-ui-control>
                             <label>Theme</label>
-                            <select name="theme" value="kicad">
+                            <select name="theme">
                                 ${theme_options}
                             </select>
                         </kc-ui-control>
+                        <kc-ui-control>
+                            <label>Color theme</label>
+                            <kc-ui-button name="export-theme" variant="outline"
+                                >Export theme JSON</kc-ui-button
+                            >
+                            <kc-ui-button name="import-theme" variant="outline"
+                                >Import theme JSON</kc-ui-button
+                            >
+                        </kc-ui-control>
+                        <kc-ui-control>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="align-controls-kicad"
+                                    checked="${prefs.alignControlsWithKiCad}" />
+                                Align controls with KiCad
+                            </label>
+                        </kc-ui-control>
                     </kc-ui-control-list>
-                    <kc-ui-control>
-                        <label>Color theme</label>
-                        <kc-ui-button name="export-theme"
-                            >Export theme JSON</kc-ui-button
-                        >
-                        <kc-ui-button name="import-theme"
-                            >Import theme JSON</kc-ui-button
-                        >
-                    </kc-ui-control>
-                    <kc-ui-control>
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="align-controls-kicad"
-                                checked="${prefs.alignControlsWithKiCad}" />
-                            Align controls with KiCad
-                        </label>
-                    </kc-ui-control>
                 </kc-ui-panel-body>
             </kc-ui-panel>
         `;

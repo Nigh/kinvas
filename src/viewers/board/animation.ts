@@ -501,7 +501,6 @@ export class LayoutAnimationController {
     seek(time: number) {
         this.#time = Math.max(0, Math.min(time, this.duration));
         this.timeline.current_time = this.#time;
-
         // Keep animation fades separate from user-controlled layer opacity.
         for (const layer of this.#viewer.layers.in_order()) {
             const bucket = bucket_of(layer.name);

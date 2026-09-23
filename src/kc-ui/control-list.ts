@@ -15,9 +15,9 @@ export class KCUIControlListElement extends KCUIElement {
                 display: flex;
                 flex-direction: column;
                 flex-wrap: nowrap;
+                gap: 0.5em;
                 background: var(--list-item-bg);
                 color: var(--list-item-fg);
-                padding-top: 0.2em;
             }
         `,
     ];
@@ -34,10 +34,12 @@ export class KCUIControlListItemElement extends KCUIElement {
         ...KCUIElement.styles,
         css`
             :host {
-                margin-top: 0.2em;
                 display: flex;
                 flex-direction: column;
                 flex-wrap: nowrap;
+                gap: 0.35em;
+                min-width: 0;
+                padding: 0.2em 0;
                 user-select: none;
                 background-color: transparent;
                 transition:
@@ -49,9 +51,8 @@ export class KCUIControlListItemElement extends KCUIElement {
                 flex: 1 1 100%;
                 display: block;
                 margin: 0;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
+                line-height: 1.3;
+                overflow-wrap: anywhere;
             }
 
             ::slotted(input),
@@ -68,7 +69,4 @@ export class KCUIControlListItemElement extends KCUIElement {
     }
 }
 
-window.customElements.define(
-    "kc-ui-control-list-item",
-    KCUIControlListItemElement,
-);
+window.customElements.define("kc-ui-control", KCUIControlListItemElement);

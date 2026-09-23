@@ -23,8 +23,8 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                 flex-direction: row;
                 height: 100%;
                 overflow: hidden;
-                min-width: calc(max(20%, 200px));
-                max-width: calc(max(20%, 200px));
+                min-width: calc(max(20%, 344px));
+                max-width: calc(max(20%, 344px));
             }
 
             div {
@@ -42,6 +42,7 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                 flex-direction: column;
                 background: var(--activity-bar-bg);
                 color: var(--activity-bar-fg);
+                width: 9rem;
                 padding: 0.2em;
                 user-select: none;
             }
@@ -62,6 +63,10 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                 --button-selected-bg: var(--activity-bar-active-bg);
                 --button-selected-fg: var(--activity-bar-active-fg);
                 --button-focus-outline: none;
+                width: 100%;
+                min-height: 44px;
+                justify-content: flex-start;
+                gap: 0.5em;
                 margin-bottom: 0.25em;
             }
 
@@ -123,6 +128,7 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                         name="${name?.toLowerCase()}"
                         title="${name}"
                         icon=${icon}>
+                        ${name}
                     </kc-ui-button>
                 ` as HTMLElement,
             );

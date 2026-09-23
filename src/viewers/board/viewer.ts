@@ -6,7 +6,7 @@
 
 import { BBox, Vec2 } from "../../base/math";
 import { is_string } from "../../base/types";
-import { Renderer } from "../../graphics";
+import { Color, Polygon, Polyline, Renderer } from "../../graphics";
 import { WebGL2Renderer } from "../../graphics/webgl";
 import type { BoardTheme } from "../../kicad";
 import * as kicad_common from "../../kicad/common";
@@ -38,6 +38,7 @@ export class BoardViewer extends DocumentViewer<
     BoardTheme
 > {
     #contextMenuCallback: ContextMenuCallback | null = null;
+    #export_bbox: BBox | null = null;
     #track_opacity = 1;
     #via_opacity = 1;
     #zone_opacity = 1;
@@ -55,6 +56,34 @@ export class BoardViewer extends DocumentViewer<
 
     get board(): board_items.KicadPCB {
         return this.document;
+    }
+
+    set_export_bbox(bbox: BBox | null) {
+        this.#export_bbox = bbox?.copy() ?? null;
+        this.paint_selected();
+    }
+
+    protected override paint_selected() {
+        const layer = this.layers.overlay;
+        layer.clear();
+        if (this.selected || this.#export_bbox) {
+            this.renderer.start_layer(layer.name);
+            if (this.selected) {
+                const bbox = this.selected.copy().grow(this.selected.w * 0.1);
+                this.renderer.line(
+                    Polyline.from_BBox(bbox, 0.254, Color.white),
+                );
+                this.renderer.polygon(Polygon.from_BBox(bbox, Color.white));
+            }
+            if (this.#export_bbox) {
+                this.renderer.line(
+                    Polyline.from_BBox(this.#export_bbox, 0.254, Color.white),
+                );
+            }
+            layer.graphics = this.renderer.end_layer();
+            layer.graphics.composite_operation = "overlay";
+        }
+        this.draw();
     }
 
     set contextMenuCallback(callback: ContextMenuCallback | null) {
@@ -80,9 +109,11 @@ export class BoardViewer extends DocumentViewer<
     protected override on_document_loaded() {
         if (this.#animation_controller) {
             // The document changed, rebuild the animation from scratch.
+            this.#animation_controller.dispose();
             this.#animation_controller = null;
             this.#animation_timeline = null;
-            this.enable_layout_animation();
+            this.paint();
+            this.draw();
         }
     }
 

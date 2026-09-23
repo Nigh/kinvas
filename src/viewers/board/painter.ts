@@ -159,15 +159,7 @@ class RectPainter extends GraphicItemPainter {
 
         const color = layer.color;
 
-        // use the same order as KiCad
-        // https://gitlab.com/kicad/code/develop/-/blob/master/common/eda_shape.cpp#L1616
-        const points = [
-            r.start,
-            new Vec2(r.end.x, r.start.y),
-            r.end,
-            new Vec2(r.start.x, r.end.y),
-            r.start,
-        ];
+        const points = r.outline_points;
 
         this.styled_line(points, r.width, color, r.stroke_params);
 

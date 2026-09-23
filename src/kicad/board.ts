@@ -1471,6 +1471,7 @@ export class Rect extends GraphicItem {
     end: Vec2;
     width: number;
     fill: string;
+    radius?: number;
 
     constructor(
         expr: Parseable,
@@ -1491,6 +1492,7 @@ export class Rect extends GraphicItem {
                 P.pair("layer", T.string),
                 P.pair("width", T.number),
                 P.pair("fill", T.string),
+                P.pair("radius", T.number),
                 P.pair("uuid", T.string),
                 P.pair("tstamp", T.string),
                 P.item("stroke", Stroke),
@@ -1498,6 +1500,46 @@ export class Rect extends GraphicItem {
         );
 
         this.width ??= this.stroke?.width || 0;
+    }
+
+    get outline_points(): Vec2[] {
+        const x0 = Math.min(this.start.x, this.end.x);
+        const x1 = Math.max(this.start.x, this.end.x);
+        const y0 = Math.min(this.start.y, this.end.y);
+        const y1 = Math.max(this.start.y, this.end.y);
+        const radius = Math.max(
+            0,
+            Math.min(this.radius ?? 0, (x1 - x0) / 2, (y1 - y0) / 2),
+        );
+        if (!radius) {
+            return [
+                this.start,
+                new Vec2(this.end.x, this.start.y),
+                this.end,
+                new Vec2(this.start.x, this.end.y),
+                this.start,
+            ];
+        }
+
+        const points: Vec2[] = [];
+        for (const [cx, cy, start] of [
+            [x1 - radius, y0 + radius, -Math.PI / 2],
+            [x1 - radius, y1 - radius, 0],
+            [x0 + radius, y1 - radius, Math.PI / 2],
+            [x0 + radius, y0 + radius, Math.PI],
+        ] as [number, number, number][]) {
+            for (let step = 0; step <= 8; step++) {
+                const angle = start + (step * Math.PI) / 16;
+                points.push(
+                    new Vec2(
+                        cx + radius * Math.cos(angle),
+                        cy + radius * Math.sin(angle),
+                    ),
+                );
+            }
+        }
+        points.push(points[0]!);
+        return points;
     }
 
     override get bbox(): BBox {

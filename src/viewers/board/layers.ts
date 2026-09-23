@@ -139,6 +139,29 @@ export const CopperLayerNames = [
     LayerNames.b_cu,
 ];
 
+export type LayerPreset =
+    | "all"
+    | "front"
+    | "back"
+    | "copper"
+    | "outer-copper"
+    | "inner-copper"
+    | "drawings"
+    | "physical";
+
+const physical_layer_names = new Set<string>([
+    ...CopperLayerNames,
+    LayerNames.f_adhes,
+    LayerNames.b_adhes,
+    LayerNames.f_paste,
+    LayerNames.b_paste,
+    LayerNames.f_silks,
+    LayerNames.b_silks,
+    LayerNames.f_mask,
+    LayerNames.b_mask,
+    LayerNames.edge_cuts,
+]);
+
 export enum CopperVirtualLayerNames {
     bb_via_holes = "BBViaHoles",
     bb_via_hole_walls = "BBViaHoleWalls",
@@ -277,7 +300,6 @@ export class LayerSet extends BaseLayerSet {
         }
 
         for (const layer_name of Object.values(LayerNames)) {
-            // Skip physical layers that aren't present on the board.
             if (!is_virtual(layer_name) && !board_layers.has(layer_name)) {
                 continue;
             }
@@ -345,6 +367,18 @@ export class LayerSet extends BaseLayerSet {
                         this.color_for(LayerNames.via_holewalls),
                     ),
                 );
+            }
+
+            this.add(
+                new ViewLayer(
+                    this,
+                    layer_name,
+                    visible,
+                    interactive,
+                    this.color_for(layer_name),
+                ),
+            );
+            if (is_copper(layer_name)) {
                 this.add(
                     new ViewLayer(
                         this,
@@ -358,16 +392,6 @@ export class LayerSet extends BaseLayerSet {
                     ),
                 );
             }
-
-            this.add(
-                new ViewLayer(
-                    this,
-                    layer_name,
-                    visible,
-                    interactive,
-                    this.color_for(layer_name),
-                ),
-            );
         }
     }
 
@@ -427,6 +451,52 @@ export class LayerSet extends BaseLayerSet {
     }
 
     /**
+     * @yields layers in front-to-back order, following the Layers menu.
+     */
+    override *in_order() {
+        const menu_layers = Array.from(this.in_ui_order());
+        const menu_rank = new Map(
+            menu_layers.map((layer, index) => [layer.name, index]),
+        );
+        const layers = Array.from(super.in_order());
+
+        const menu_owner = (name: string) => {
+            const base_name = name.split("@anim:", 1)[0]!;
+            if (menu_rank.has(base_name)) return base_name;
+            if (base_name.startsWith(":Pads:Front")) return LayerNames.f_cu;
+            if (base_name.startsWith(":Pads:Back")) return LayerNames.b_cu;
+            for (const copper of CopperLayerNames) {
+                if (base_name.startsWith(`:${copper}:`)) return copper;
+            }
+            return undefined;
+        };
+
+        const ordered = layers
+            .map((layer, index) => ({
+                layer,
+                index,
+                rank: menu_rank.get(menu_owner(layer.name) ?? ""),
+            }))
+            .filter((entry) => entry.rank !== undefined)
+            .sort((a, b) => a.rank! - b.rank! || a.index - b.index);
+        let ordered_index = 0;
+
+        for (const layer of layers) {
+            if (menu_owner(layer.name) === undefined) {
+                yield layer;
+            } else {
+                yield ordered[ordered_index++]!.layer;
+            }
+        }
+    }
+
+    /** Board highlighting dims other layers without changing menu Z-order. */
+    override *in_display_order() {
+        yield* Array.from(this.in_order()).reverse();
+        yield this.overlay;
+    }
+
+    /**
      * @yields layers that correspond to board layers that should be
      *      displayed in the layer selection UI
      */
@@ -467,6 +537,54 @@ export class LayerSet extends BaseLayerSet {
 
             if (layer) {
                 yield layer;
+            }
+        }
+    }
+
+    apply_preset(preset: LayerPreset) {
+        for (const layer of this.in_ui_order()) {
+            switch (preset) {
+                case "all":
+                    layer.visible = true;
+                    break;
+                case "front":
+                    layer.visible =
+                        layer.name.startsWith("F.") ||
+                        layer.name === LayerNames.edge_cuts;
+                    break;
+                case "back":
+                    layer.visible =
+                        layer.name.startsWith("B.") ||
+                        layer.name === LayerNames.edge_cuts;
+                    break;
+                case "copper":
+                    layer.visible =
+                        layer.name.includes(".Cu") ||
+                        layer.name === LayerNames.edge_cuts;
+                    break;
+                case "outer-copper":
+                    layer.visible =
+                        layer.name === LayerNames.f_cu ||
+                        layer.name === LayerNames.b_cu ||
+                        layer.name === LayerNames.edge_cuts;
+                    break;
+                case "inner-copper":
+                    layer.visible =
+                        (layer.name.includes(".Cu") &&
+                            layer.name !== LayerNames.f_cu &&
+                            layer.name !== LayerNames.b_cu) ||
+                        layer.name === LayerNames.edge_cuts;
+                    break;
+                case "drawings":
+                    layer.visible =
+                        !layer.name.includes(".Cu") &&
+                        !layer.name.includes(".Mask") &&
+                        !layer.name.includes(".Paste") &&
+                        !layer.name.includes(".Adhes");
+                    break;
+                case "physical":
+                    layer.visible = physical_layer_names.has(layer.name);
+                    break;
             }
         }
     }

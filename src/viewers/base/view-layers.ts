@@ -214,8 +214,10 @@ export class ViewLayerSet implements IDisposable {
      * including the overlay layer.
      */
     *in_display_order() {
-        for (let i = this.#layer_list.length - 1; i >= 0; i--) {
-            const layer = this.#layer_list[i]!;
+        const layers = Array.from(this.in_order());
+
+        for (let i = layers.length - 1; i >= 0; i--) {
+            const layer = layers[i]!;
 
             if (!layer.highlighted) {
                 yield layer;
@@ -224,8 +226,8 @@ export class ViewLayerSet implements IDisposable {
 
         // Go back through the layers and yield the highlighted ones. These
         // are drawn after regular layers.
-        for (let i = this.#layer_list.length - 1; i >= 0; i--) {
-            const layer = this.#layer_list[i]!;
+        for (let i = layers.length - 1; i >= 0; i--) {
+            const layer = layers[i]!;
 
             if (layer.highlighted) {
                 yield layer;

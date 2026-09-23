@@ -18,6 +18,8 @@ export default {
     // ],
     plugins: [
         esbuildPlugin({
+            target: "es2022",
+            tsconfig: "scripts/tsconfig.test.json",
             ts: true,
             loaders: {
                 ".js": "ts",

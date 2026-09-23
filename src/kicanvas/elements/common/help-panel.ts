@@ -47,15 +47,11 @@ export class KCHelpPanel extends KCUIElement {
                         if you run into any bugs.
                     </p>
                     <p>
-                        kinvas is developed by
-                        <a href="https://thea.codes" target="_blank"
-                            >Thea Flowers</a
-                        >
-                        and supported by
+                        kinvas is a fork of
                         <a
-                            href="https://github.com/sponsors/theacodes"
+                            href="https://github.com/theacodes/kicanvas"
                             target="_blank"
-                            >community donations</a
+                            >KiCanvas</a
                         >.
                     </p></kc-ui-panel-body
                 >

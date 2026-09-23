@@ -14,6 +14,7 @@ import { initiate_download } from "../../../base/dom/download";
 import { delegate } from "../../../base/events";
 import { BBox, Vec2 } from "../../../base/math";
 import { html } from "../../../base/web-components";
+import { KiCanvasLoadEvent } from "../../../viewers/base/events";
 import { KCUIElement, type KCUIRangeElement } from "../../../kc-ui";
 import type { LayoutAnimationController } from "../../../viewers/board/animation";
 import {
@@ -27,6 +28,7 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
     animation: LayoutAnimationController | null = null;
     #export_bbox: BBox | null = null;
     #cancel_area_selection: (() => void) | null = null;
+    #activity_observer: MutationObserver | null = null;
 
     override connectedCallback() {
         (async () => {
@@ -34,10 +36,23 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             await this.viewer.loaded;
             super.connectedCallback();
             this.setup_events();
+            const activity = this.closest("kc-ui-activity");
+            if (activity) {
+                this.#activity_observer = new MutationObserver(() => {
+                    if (!activity.hasAttribute("active"))
+                        this.reset_animation();
+                });
+                this.#activity_observer.observe(activity, {
+                    attributes: true,
+                    attributeFilter: ["active"],
+                });
+            }
         })();
     }
     override disconnectedCallback() {
         this.#cancel_area_selection?.();
+        this.#activity_observer?.disconnect();
+        this.reset_animation();
         super.disconnectedCallback();
     }
 
@@ -62,17 +77,25 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
                     break;
                 case "clear-area":
                     this.#export_bbox = null;
-                    this.viewer.select(null);
+                    this.viewer.set_export_bbox(null);
                     this.update_area_status();
                     break;
             }
         });
 
+        this.viewer.addEventListener(KiCanvasLoadEvent.type, () => {
+            this.reset_animation();
+            this.#export_bbox = null;
+            this.viewer.set_export_bbox(null);
+            this.update_area_status();
+        });
+
         delegate(this.renderRoot, "kc-ui-range", "kc-ui-range:input", (e) => {
             const control = e.target as KCUIRangeElement;
-            if (control.name == "time" && this.animation) {
-                this.animation.pause();
-                this.animation.seek_progress(control.valueAsNumber);
+            if (control.name == "time") {
+                const progress = control.valueAsNumber;
+                this.ensure_animation()?.pause();
+                this.animation?.seek_progress(progress);
             }
         });
     }
@@ -81,14 +104,30 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
         if (this.animation) {
             this.animation.toggle();
         } else {
-            const animation = this.viewer.enable_layout_animation();
+            const animation = this.ensure_animation();
             if (!animation) {
                 return;
             }
-            this.animation = animation;
-            animation.on_change = () => this.update_ui();
             animation.play();
         }
+        this.update_ui();
+    }
+
+    private ensure_animation() {
+        if (!this.animation) {
+            this.animation = this.viewer.enable_layout_animation();
+            if (this.animation) {
+                this.animation.on_change = () => this.update_ui();
+            }
+        }
+        return this.animation;
+    }
+
+    private reset_animation() {
+        if (!this.animation) return;
+        this.animation.on_change = null;
+        this.viewer.disable_layout_animation();
+        this.animation = null;
         this.update_ui();
     }
 
@@ -110,8 +149,8 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
         const time_range = this.renderRoot.querySelector<KCUIRangeElement>(
             'kc-ui-range[name="time"]',
         );
-        if (time_range && this.animation) {
-            time_range.value = this.animation.progress.toString();
+        if (time_range) {
+            time_range.value = (this.animation?.progress ?? 0).toString();
         }
 
         const status = this.renderRoot.querySelector(".status");
@@ -174,13 +213,16 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
                 return;
             }
             stop_event(event);
-            this.viewer.select(BBox.from_points([start, point_for(event)]));
+            this.viewer.set_export_bbox(
+                BBox.from_points([start, point_for(event)]),
+            );
         };
         const cleanup = () => {
             canvas.style.cursor = old_cursor;
             canvas.removeEventListener("pointerdown", on_down, true);
             canvas.removeEventListener("pointermove", on_move, true);
             canvas.removeEventListener("pointerup", on_up, true);
+            canvas.removeEventListener("pointercancel", on_cancel, true);
             window.removeEventListener("keydown", on_key);
             this.#cancel_area_selection = null;
         };
@@ -190,13 +232,24 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             }
             stop_event(event);
             const bbox = BBox.from_points([start, point_for(event)]);
-            this.#export_bbox = bbox.valid ? bbox : null;
-            this.viewer.select(this.#export_bbox);
+            if (bbox.valid) {
+                this.#export_bbox = bbox;
+            }
+            this.viewer.set_export_bbox(this.#export_bbox);
             cleanup();
             this.update_area_status();
         };
+        const on_cancel = (event: PointerEvent) => {
+            if (!start) {
+                return;
+            }
+            stop_event(event);
+            this.viewer.set_export_bbox(this.#export_bbox);
+            cleanup();
+        };
         const on_key = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
+                this.viewer.set_export_bbox(this.#export_bbox);
                 cleanup();
             }
         };
@@ -205,6 +258,7 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
         canvas.addEventListener("pointerdown", on_down, true);
         canvas.addEventListener("pointermove", on_move, true);
         canvas.addEventListener("pointerup", on_up, true);
+        canvas.addEventListener("pointercancel", on_cancel, true);
         window.addEventListener("keydown", on_key);
         this.#cancel_area_selection = cleanup;
     }
@@ -243,6 +297,7 @@ export class KCBoardAnimationPanelElement extends KCUIElement {
             {
                 bbox,
                 sketch_modes: this.viewer.sketch_modes,
+                transparent_background: format !== "jpg",
             },
             this.viewer.layout_animation?.timeline,
         );

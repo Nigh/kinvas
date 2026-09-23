@@ -28,6 +28,8 @@ export interface SVGExportOptions {
     bbox?: BBox;
     /** Object types rendered as outlines. */
     sketch_modes?: Readonly<Partial<BoardSketchModes>>;
+    /** Omit the background rectangle to preserve alpha. */
+    transparent_background?: boolean;
 }
 
 interface ExportLayer {
@@ -157,10 +159,14 @@ function build_svg(
             `viewBox="${fmt(bbox.x)} ${fmt(bbox.y)} ${fmt(bbox.w)} ${fmt(
                 bbox.h,
             )}" width="800">`,
-        `<rect x="${fmt(bbox.x)}" y="${fmt(bbox.y)}" ` +
-            `width="${fmt(bbox.w)}" height="${fmt(bbox.h)}" ` +
-            `fill="${background}"/>`,
     ];
+    if (!options.transparent_background) {
+        parts.push(
+            `<rect x="${fmt(bbox.x)}" y="${fmt(bbox.y)}" ` +
+                `width="${fmt(bbox.w)}" height="${fmt(bbox.h)}" ` +
+                `fill="${background}"/>`,
+        );
+    }
 
     for (const { layer, name, bucket, opacity } of layers) {
         const begin =

@@ -14,7 +14,7 @@ export class KCUIPropertyList extends KCUIElement {
             :host {
                 display: grid;
                 gap: 1px;
-                grid-template-columns: fit-content(50%) 1fr;
+                grid-template-columns: minmax(5.5em, 42%) minmax(0, 1fr);
                 background: var(--grid-outline);
                 border-bottom: 1px solid var(--grid-outline);
             }
@@ -37,11 +37,10 @@ export class KCUIPropertyListItemElement extends KCUIElement {
             }
 
             span {
-                padding: 0.2em;
+                min-width: 0;
+                padding: 0.35em 0.5em;
                 background: var(--bg);
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
+                overflow-wrap: anywhere;
                 user-select: all;
             }
 

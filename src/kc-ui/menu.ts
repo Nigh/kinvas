@@ -19,7 +19,8 @@ export class KCUIMenuElement extends KCUIElement {
         ...KCUIElement.styles,
         css`
             :host {
-                width 100%;
+                width: 100%;
+                min-width: 0;
                 display: flex;
                 flex-direction: column;
                 flex-wrap: nowrap;
@@ -137,7 +138,9 @@ export class KCUIMenuItemElement extends KCUIElement {
                 display: flex;
                 align-items: center;
                 flex-wrap: nowrap;
-                padding: var(--list-item-padding, 0.2em 0.3em);
+                gap: 0.45em;
+                min-height: 2.35rem;
+                padding: var(--list-item-padding, 0.4em 0.55em);
                 user-select: none;
                 background: transparent;
                 transition:
@@ -159,11 +162,13 @@ export class KCUIMenuItemElement extends KCUIElement {
             :host([disabled]) {
                 background: var(--list-item-disabled-bg);
                 color: var(--list-item-disabled-fg);
+                cursor: default;
             }
 
             ::slotted(*) {
-                flex: 1 1 100%;
+                flex: 1 1 auto;
                 display: block;
+                min-width: 0;
                 text-overflow: ellipsis;
                 white-space: nowrap;
                 overflow: hidden;
@@ -219,7 +224,12 @@ export class KCUIMenuLabelElement extends KCUIElement {
                 width: 100%;
                 display: flex;
                 flex-wrap: nowrap;
-                padding: 0.2em 0.3em;
+                min-height: 2rem;
+                align-items: center;
+                padding: 0.35em 0.55em;
+                font-size: 0.85em;
+                font-weight: 600;
+                line-height: 1.25;
                 background: var(--panel-subtitle-bg);
                 color: var(--panel-subtitle-fg);
             }

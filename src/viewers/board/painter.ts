@@ -10,7 +10,7 @@
  * Each item class has a corresponding Painter implementation.
  */
 
-import { Angle, Arc, Matrix3, Vec2 } from "../../base/math";
+import { Angle, Arc, BBox, Matrix3, Vec2 } from "../../base/math";
 import * as log from "../../base/log";
 import { Circle, Color, Polygon, Polyline, Renderer } from "../../graphics";
 import { StrokeParams } from "../../kicad/common.ts";
@@ -19,7 +19,9 @@ import { EDAText, StrokeFont, TextAttributes } from "../../kicad/text";
 import type { BoardTheme } from "../../kicad";
 import { DocumentPainter, ItemPainter, StrokePainter } from "../base/painter";
 import { ViewLayerNames } from "../base/view-layers";
+import { connected_track_paths } from "./trace-sketch";
 import {
+    bucket_of,
     base_layer_name,
     bucket_layer_name,
     type LayoutTimeline,
@@ -38,16 +40,21 @@ import {
 export type BoardObjectType = "tracks" | "vias" | "pads" | "holes" | "zones";
 
 export type BoardSketchModes = Record<BoardObjectType, boolean>;
+export type BoardVisibleType = BoardObjectType | "grid" | "page";
+export type BoardVisibleModes = Record<BoardVisibleType, boolean>;
 
 const pad_layers = new Set<string>([
     LayerNames.pads_front,
     LayerNames.pads_back,
+    LayerNames.pads_front_netname,
+    LayerNames.pads_back_netname,
 ]);
 
 const pad_hole_layers = new Set<string>([
     LayerNames.non_plated_holes,
     LayerNames.pad_holes,
     LayerNames.pad_holewalls,
+    LayerNames.pad_holes_netname,
 ]);
 
 abstract class BoardItemPainter extends ItemPainter {
@@ -152,15 +159,7 @@ class RectPainter extends GraphicItemPainter {
 
         const color = layer.color;
 
-        // use the same order as KiCad
-        // https://gitlab.com/kicad/code/develop/-/blob/master/common/eda_shape.cpp#L1616
-        const points = [
-            r.start,
-            new Vec2(r.end.x, r.start.y),
-            r.end,
-            new Vec2(r.start.x, r.end.y),
-            r.start,
-        ];
+        const points = r.outline_points;
 
         this.styled_line(points, r.width, color, r.stroke_params);
 
@@ -380,23 +379,25 @@ class ZonePainter extends BoardItemPainter {
     }
 
     paint(layer: ViewLayer, z: board_items.Zone) {
-        if (!z.filled_polygons) {
-            return;
-        }
-
         if (this.filter_net && z.net != this.filter_net) {
             return;
         }
 
-        for (const p of z.filled_polygons) {
+        if (this.gfx.state.outline) {
+            for (const polygon of z.polygons ?? []) {
+                this.gfx.polygon(new Polygon(polygon.polyline, layer.color));
+            }
+            return;
+        }
+
+        for (const polygon of z.filled_polygons ?? []) {
             if (
-                !base_layer_name(layer.name).includes(p.layer) &&
+                !base_layer_name(layer.name).includes(polygon.layer) &&
                 layer.name != ViewLayerNames.overlay
             ) {
                 continue;
             }
-
-            this.gfx.polygon(new Polygon(p.polyline, layer.color));
+            this.gfx.polygon(new Polygon(polygon.polyline, layer.color));
         }
     }
 }
@@ -1274,7 +1275,99 @@ export class BoardPainter extends DocumentPainter {
         zones: false,
     };
 
+    visible_modes: Readonly<BoardVisibleModes> = {
+        tracks: true,
+        vias: true,
+        pads: true,
+        holes: true,
+        zones: true,
+        grid: true,
+        page: true,
+    };
+
+    override paint_layer(layer: ViewLayer) {
+        const bboxes = new Map();
+        const visible_tracks = layer.items.filter(
+            (item): item is board_items.LineSegment | board_items.ArcSegment =>
+                (item instanceof board_items.LineSegment ||
+                    item instanceof board_items.ArcSegment) &&
+                this.visible_modes.tracks,
+        );
+
+        this.gfx.start_layer(layer.name);
+        if (this.sketch_modes.tracks) {
+            this.gfx.state.push();
+            this.gfx.state.outline = true;
+            try {
+                for (const path of connected_track_paths(visible_tracks)) {
+                    this.gfx.line(
+                        new Polyline(path.points, path.width, layer.color),
+                    );
+                }
+            } finally {
+                this.gfx.state.pop();
+            }
+        }
+
+        for (const item of layer.items) {
+            if (!this.item_is_visible(layer, item)) continue;
+            this.gfx.start_bbox();
+            if (
+                this.sketch_modes.tracks &&
+                (item instanceof board_items.LineSegment ||
+                    item instanceof board_items.ArcSegment)
+            ) {
+                const points =
+                    item instanceof board_items.ArcSegment
+                        ? Arc.from_three_points(
+                              item.start,
+                              item.mid,
+                              item.end,
+                              item.width,
+                          ).to_polyline()
+                        : [item.start, item.end];
+                this.gfx.add_bbox(BBox.from_points(points).grow(item.width));
+            } else {
+                this.paint_item(layer, item);
+            }
+            bboxes.set(item, this.gfx.end_bbox(item));
+        }
+
+        layer.graphics = this.gfx.end_layer();
+        layer.bboxes = bboxes;
+    }
+
+    private item_is_visible(layer: ViewLayer, item: unknown) {
+        const layer_name = base_layer_name(layer.name);
+        if (pad_hole_layers.has(layer_name) && !this.visible_modes.holes) {
+            return false;
+        }
+        if (pad_layers.has(layer_name) && !this.visible_modes.pads) {
+            return false;
+        }
+        if (item instanceof board_items.Pad) {
+            return pad_hole_layers.has(layer_name)
+                ? this.visible_modes.holes
+                : this.visible_modes.pads;
+        }
+        if (
+            (item instanceof board_items.LineSegment ||
+                item instanceof board_items.ArcSegment) &&
+            !this.visible_modes.tracks
+        ) {
+            return false;
+        }
+        if (item instanceof board_items.Via && !this.visible_modes.vias) {
+            return false;
+        }
+        if (item instanceof board_items.Zone && !this.visible_modes.zones) {
+            return false;
+        }
+        return true;
+    }
+
     override paint_item(layer: ViewLayer, item: unknown, ...rest: unknown[]) {
+        if (!this.item_is_visible(layer, item)) return;
         const layer_name = base_layer_name(layer.name);
         let outline = false;
 
@@ -1320,16 +1413,26 @@ export class BoardPainter extends DocumentPainter {
 
         const name = bucket_layer_name(layer_name, bucket);
 
-        // Bucket layers are created lazily, right after their parent layer
-        // so they share its position in the rendering order.
+        // Keep later buckets in front, regardless of paint encounter order.
         if (!this.layers.by_name(name)) {
             const parent = this.layers.by_name(layer_name);
             if (!parent) {
                 return layer_name;
             }
             const timeline = this.timeline;
+            let insert_after = layer_name;
+            for (const existing of this.layers.in_order()) {
+                const existing_bucket = bucket_of(existing.name);
+                if (
+                    base_layer_name(existing.name) === layer_name &&
+                    existing_bucket !== null &&
+                    existing_bucket > bucket
+                ) {
+                    insert_after = existing.name;
+                }
+            }
             this.layers.add_after(
-                layer_name,
+                insert_after,
                 new ViewLayer(
                     this.layers,
                     name,

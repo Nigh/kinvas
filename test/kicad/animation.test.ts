@@ -6,9 +6,13 @@
 
 import { assert } from "chai";
 import * as board from "../../src/kicad/board";
-import { BBox } from "../../src/base/math";
+import { NullRenderer } from "../../src/graphics/null-renderer";
+import { RenderLayer } from "../../src/graphics/renderer";
+import { BBox, Matrix3 } from "../../src/base/math";
 import kicad_theme from "../../src/kicanvas/themes/kicad-default";
+import { BoardPainter } from "../../src/viewers/board/painter";
 import { ViewLayer, ViewLayerSet } from "../../src/viewers/base/view-layers";
+import type { Viewport } from "../../src/viewers/base/viewport";
 import {
     LayoutAnimationController,
     LayoutTimeline,
@@ -17,8 +21,15 @@ import {
     bucket_of,
 } from "../../src/viewers/board/animation";
 import { export_board_svg } from "../../src/viewers/board/export-svg";
-import { LayerSet } from "../../src/viewers/board/layers";
+import {
+    CopperLayerNames,
+    CopperVirtualLayerNames,
+    LayerNames,
+    LayerSet,
+    virtual_layer_for,
+} from "../../src/viewers/board/layers";
 import type { BoardViewer } from "../../src/viewers/board/viewer";
+import { Viewer } from "../../src/viewers/base/viewer";
 
 import traces_pcb_src from "./files/traces.kicad_pcb";
 import vias_pcb_src from "./files/vias.kicad_pcb";
@@ -133,6 +144,206 @@ suite("board.animation.LayoutTimeline", function () {
         assert.equal(bucket_of(":F.Cu:Zones@anim:1"), 1);
     });
 
+    test("keeps bucket layer Z-order stable when buckets are created out of order", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", traces_pcb_src);
+        const timeline = new LayoutTimeline(pcb);
+        const layers = new LayerSet(pcb, kicad_theme.board);
+        class TestPainter extends BoardPainter {
+            add_bucket(item: unknown, layer_name: string) {
+                return this.layer_name_for(item, layer_name);
+            }
+        }
+        const painter = new TestPainter(
+            new NullRenderer(),
+            layers,
+            kicad_theme.board,
+        );
+        painter.timeline = timeline;
+        const layer_name = pcb.segments[0]!.layer;
+        const segments = pcb.segments
+            .filter((item) => item.layer === layer_name)
+            .sort(
+                (a, b) =>
+                    timeline.bucket_for(b, layer_name)! -
+                    timeline.bucket_for(a, layer_name)!,
+            );
+        for (const segment of segments) {
+            painter.add_bucket(segment, layer_name);
+        }
+
+        const buckets = Array.from(layers.in_display_order())
+            .filter((layer) => base_layer_name(layer.name) === layer_name)
+            .map((layer) => bucket_of(layer.name))
+            .filter((bucket): bucket is number => bucket !== null);
+        assert.deepEqual(
+            buckets,
+            [...buckets].sort((a, b) => a - b),
+        );
+    });
+    test("render order follows the current Layers menu order", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", zones_pcb_src);
+        class ReorderedLayerSet extends LayerSet {
+            reversed = false;
+            override *in_ui_order() {
+                const layers = Array.from(super.in_ui_order());
+                yield* this.reversed ? layers.reverse() : layers;
+            }
+        }
+        const layers = new ReorderedLayerSet(pcb, kicad_theme.board);
+        for (const reversed of [false, true]) {
+            layers.reversed = reversed;
+            const menu_order = Array.from(
+                layers.in_ui_order(),
+                (layer) => layer.name,
+            );
+            const menu_names = new Set(menu_order);
+            const rendered_order = Array.from(
+                layers.in_display_order(),
+                (layer) => layer.name,
+            ).filter((name) => menu_names.has(name));
+            assert.deepEqual(rendered_order, menu_order.reverse());
+        }
+        layers.by_name(LayerNames.b_cu)!.highlighted = true;
+        const menu_order = Array.from(
+            layers.in_ui_order(),
+            (layer) => layer.name,
+        );
+        const menu_names = new Set(menu_order);
+        assert.deepEqual(
+            Array.from(layers.in_display_order(), (layer) => layer.name).filter(
+                (name) => menu_names.has(name),
+            ),
+            menu_order.reverse(),
+        );
+    });
+
+    test("submits increasing WebGL depths for six layers and many animation buckets", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", zones_pcb_src);
+        const layers = new LayerSet(pcb, kicad_theme.board);
+        const renderer = new NullRenderer();
+        const calls: { name: string; depth: number }[] = [];
+        class CapturedLayer extends RenderLayer {
+            override dispose() {}
+            override clear() {}
+            override render(_camera: Matrix3, depth: number) {
+                calls.push({ name: this.name, depth });
+            }
+        }
+        for (const name of [
+            LayerNames.f_cu,
+            LayerNames.in1_cu,
+            LayerNames.in2_cu,
+            LayerNames.in3_cu,
+            LayerNames.in4_cu,
+            LayerNames.b_cu,
+        ]) {
+            if (!layers.by_name(name)) {
+                layers.add(new ViewLayer(layers, name));
+            }
+            for (let bucket = 0; bucket < 24; bucket++) {
+                layers.add(
+                    new ViewLayer(layers, bucket_layer_name(name, bucket)),
+                );
+            }
+        }
+        for (const layer of layers.in_order()) {
+            layer.graphics = new CapturedLayer(renderer, layer.name);
+        }
+        class TestViewer extends Viewer {
+            protected override create_renderer() {
+                return renderer;
+            }
+            override async load() {}
+            override paint() {}
+            override zoom_to_page() {}
+            render_frame() {
+                this.on_draw();
+            }
+        }
+        const viewer = new TestViewer(document.createElement("canvas"), false);
+        viewer.renderer = renderer;
+        viewer.layers = layers;
+        viewer.viewport = {
+            camera: { matrix: Matrix3.identity() },
+        } as Viewport;
+        viewer.render_frame();
+
+        assert.isAbove(calls.length, 100);
+        assert.isAbove(calls[0]!.depth, 0);
+        assert.isBelow(calls.at(-1)!.depth, 1);
+        for (let i = 1; i < calls.length; i++) {
+            assert.isAbove(calls[i]!.depth, calls[i - 1]!.depth);
+        }
+        const menu_order = Array.from(
+            layers.in_ui_order(),
+            (layer) => layer.name,
+        ).reverse();
+        const menu_names = new Set(menu_order);
+        assert.deepEqual(
+            calls
+                .map((call) => call.name)
+                .filter((name) => menu_names.has(name)),
+            menu_order,
+        );
+    });
+    test("draw order follows menu order and each zone stays under its copper", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", zones_pcb_src);
+        const layers = new LayerSet(pcb, kicad_theme.board);
+        const timeline = new LayoutTimeline(pcb);
+        class TestPainter extends BoardPainter {
+            add_bucket(item: unknown, layer_name: string) {
+                return this.layer_name_for(item, layer_name);
+            }
+        }
+        const painter = new TestPainter(
+            new NullRenderer(),
+            layers,
+            kicad_theme.board,
+        );
+        painter.timeline = timeline;
+        const zone_buckets: [string, string][] = [];
+        const copper = CopperLayerNames.filter((name) => layers.by_name(name));
+        for (const zone of pcb.zones) {
+            for (const layer_name of copper) {
+                const zones = virtual_layer_for(
+                    layer_name,
+                    CopperVirtualLayerNames.zones,
+                );
+                const bucket = timeline.bucket_for(zone, zones);
+                if (bucket === null) continue;
+                painter.add_bucket(zone, zones);
+                zone_buckets.push([
+                    bucket_layer_name(zones, bucket),
+                    layer_name,
+                ]);
+            }
+        }
+        assert.isNotEmpty(zone_buckets);
+        const order = Array.from(
+            layers.in_display_order(),
+            (layer) => layer.name,
+        );
+        const menu_order = Array.from(
+            layers.in_ui_order(),
+            (layer) => layer.name,
+        );
+        const menu_names = new Set(menu_order);
+        assert.deepEqual(
+            order.filter((name) => menu_names.has(name)),
+            menu_order.reverse(),
+        );
+        for (const layer_name of copper) {
+            const zones = virtual_layer_for(
+                layer_name,
+                CopperVirtualLayerNames.zones,
+            );
+            assert.isBelow(order.indexOf(zones), order.indexOf(layer_name));
+        }
+        for (const [bucket, layer_name] of zone_buckets) {
+            assert.isBelow(order.indexOf(bucket), order.indexOf(layer_name));
+        }
+    });
+
     test("animation fade preserves user opacity", function () {
         const pcb = new board.KicadPCB("test.kicad_pcb", traces_pcb_src);
         const timeline = new LayoutTimeline(pcb);
@@ -147,9 +358,32 @@ suite("board.animation.LayoutTimeline", function () {
         const animation = new LayoutAnimationController(viewer, timeline);
 
         animation.seek(timeline.duration);
+        animation.seek(timeline.duration / 2);
 
         assert.equal(layer.opacity, 0.35);
         assert.equal(layer.animation_opacity, 1);
+
+        animation.play();
+        assert.isTrue(animation.playing);
+        animation.pause();
+        assert.isFalse(animation.playing);
+    });
+});
+
+suite("board layer presets", function () {
+    test("physical shows fabricated layers and hides documentation layers", function () {
+        const pcb = new board.KicadPCB("test.kicad_pcb", zones_pcb_src);
+        const layers = new LayerSet(pcb, kicad_theme.board);
+
+        layers.apply_preset("physical");
+
+        assert.isTrue(layers.by_name(LayerNames.f_cu)!.visible);
+        assert.isTrue(layers.by_name(LayerNames.f_mask)!.visible);
+        assert.isTrue(layers.by_name(LayerNames.f_silks)!.visible);
+        assert.isTrue(layers.by_name(LayerNames.edge_cuts)!.visible);
+        assert.isFalse(layers.by_name(LayerNames.f_fab)!.visible);
+        assert.isFalse(layers.by_name(LayerNames.dwgs_user)!.visible);
+        assert.isFalse(layers.by_name(LayerNames.user_1)!.visible);
     });
 });
 

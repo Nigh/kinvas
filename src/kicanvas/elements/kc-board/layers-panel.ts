@@ -13,8 +13,8 @@ import {
 } from "../../../kc-ui";
 import { Color } from "../../../base/color";
 import {
-    LayerNames,
     LayerSet,
+    type LayerPreset,
     layer_theme_key,
     set_theme_color,
     theme_color_for,
@@ -210,63 +210,9 @@ export class KCBoardLayersPanelElement extends KCUIElement {
         // Presets
         this.presets_menu.addEventListener("kc-ui-menu:select", (e) => {
             const item = (e as CustomEvent).detail as KCUIMenuItemElement;
-            const ui_layers = this.viewer.layers.in_ui_order();
-
-            switch (item.name) {
-                case "all":
-                    for (const l of ui_layers) {
-                        l.visible = true;
-                    }
-                    break;
-                case "front":
-                    for (const l of ui_layers) {
-                        l.visible =
-                            l.name.startsWith("F.") ||
-                            l.name == LayerNames.edge_cuts;
-                    }
-                    break;
-                case "back":
-                    for (const l of ui_layers) {
-                        l.visible =
-                            l.name.startsWith("B.") ||
-                            l.name == LayerNames.edge_cuts;
-                    }
-                    break;
-                case "copper":
-                    for (const l of ui_layers) {
-                        l.visible =
-                            l.name.includes(".Cu") ||
-                            l.name == LayerNames.edge_cuts;
-                    }
-                    break;
-                case "outer-copper":
-                    for (const l of ui_layers) {
-                        l.visible =
-                            l.name == LayerNames.f_cu ||
-                            l.name == LayerNames.b_cu ||
-                            l.name == LayerNames.edge_cuts;
-                    }
-                    break;
-                case "inner-copper":
-                    for (const l of ui_layers) {
-                        l.visible =
-                            (l.name.includes(".Cu") &&
-                                !(
-                                    l.name == LayerNames.f_cu ||
-                                    l.name == LayerNames.b_cu
-                                )) ||
-                            l.name == LayerNames.edge_cuts;
-                    }
-                    break;
-                case "drawings":
-                    for (const l of ui_layers) {
-                        l.visible =
-                            !l.name.includes(".Cu") &&
-                            !l.name.includes(".Mask") &&
-                            !l.name.includes(".Paste") &&
-                            !l.name.includes(".Adhes");
-                    }
-            }
+            (this.viewer.layers as LayerSet).apply_preset(
+                item.name as LayerPreset,
+            );
 
             this.viewer.draw();
             this.update_item_states();
@@ -319,6 +265,9 @@ export class KCBoardLayersPanelElement extends KCUIElement {
                         </kc-ui-menu-item>
                         <kc-ui-menu-item name="drawings">
                             Drawings
+                        </kc-ui-menu-item>
+                        <kc-ui-menu-item name="physical">
+                            Physical
                         </kc-ui-menu-item>
                     </kc-ui-menu>
                 </kc-ui-panel-body>

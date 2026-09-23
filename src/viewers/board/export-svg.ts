@@ -19,7 +19,11 @@ import {
     bucket_layer_name,
 } from "./animation";
 import { LayerSet } from "./layers";
-import { BoardPainter, type BoardSketchModes } from "./painter";
+import {
+    BoardPainter,
+    type BoardSketchModes,
+    type BoardVisibleModes,
+} from "./painter";
 
 export interface SVGExportOptions {
     /** Include layers that are hidden in the viewer. Defaults to false. */
@@ -28,6 +32,10 @@ export interface SVGExportOptions {
     bbox?: BBox;
     /** Object types rendered as outlines. */
     sketch_modes?: Readonly<Partial<BoardSketchModes>>;
+    /** Object types omitted from the viewer. */
+    visible_modes?: Readonly<Partial<BoardVisibleModes>>;
+    /** Omit the background rectangle to preserve alpha. */
+    transparent_background?: boolean;
 }
 
 interface ExportLayer {
@@ -52,6 +60,7 @@ export function export_layout_animation_svg(
         theme,
         timeline,
         options.sketch_modes,
+        options.visible_modes,
     );
     const layers: ExportLayer[] = [];
 
@@ -91,6 +100,7 @@ export function export_board_svg(
         theme,
         timeline,
         options.sketch_modes,
+        options.visible_modes,
     );
     const layers: ExportLayer[] = [];
 
@@ -126,11 +136,13 @@ function paint_layers(
     theme: ConstructorParameters<typeof LayerSet>[1],
     timeline: LayoutTimeline | null,
     sketch_modes?: Readonly<Partial<BoardSketchModes>>,
+    visible_modes?: Readonly<Partial<BoardVisibleModes>>,
 ) {
     const layers = new LayerSet(board, theme);
     const painter = new BoardPainter(new NullRenderer(), layers, theme);
     painter.timeline = timeline;
     painter.sketch_modes = { ...painter.sketch_modes, ...sketch_modes };
+    painter.visible_modes = { ...painter.visible_modes, ...visible_modes };
     painter.paint(board);
     return layers;
 }
@@ -157,10 +169,14 @@ function build_svg(
             `viewBox="${fmt(bbox.x)} ${fmt(bbox.y)} ${fmt(bbox.w)} ${fmt(
                 bbox.h,
             )}" width="800">`,
-        `<rect x="${fmt(bbox.x)}" y="${fmt(bbox.y)}" ` +
-            `width="${fmt(bbox.w)}" height="${fmt(bbox.h)}" ` +
-            `fill="${background}"/>`,
     ];
+    if (!options.transparent_background) {
+        parts.push(
+            `<rect x="${fmt(bbox.x)}" y="${fmt(bbox.y)}" ` +
+                `width="${fmt(bbox.w)}" height="${fmt(bbox.h)}" ` +
+                `fill="${background}"/>`,
+        );
+    }
 
     for (const { layer, name, bucket, opacity } of layers) {
         const begin =

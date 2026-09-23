@@ -23,8 +23,8 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                 flex-direction: row;
                 height: 100%;
                 overflow: hidden;
-                min-width: calc(max(20%, 200px));
-                max-width: calc(max(20%, 200px));
+                min-width: min(344px, 100vw);
+                max-width: min(344px, 100vw);
             }
 
             div {
@@ -42,12 +42,19 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                 flex-direction: column;
                 background: var(--activity-bar-bg);
                 color: var(--activity-bar-fg);
+                width: 9rem;
                 padding: 0.2em;
                 user-select: none;
             }
 
             div.start {
                 flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+            }
+
+            div.end {
+                flex: 0 0 auto;
             }
 
             div.activities {
@@ -61,12 +68,19 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                 --button-hover-fg: var(--activity-bar-active-fg);
                 --button-selected-bg: var(--activity-bar-active-bg);
                 --button-selected-fg: var(--activity-bar-active-fg);
-                --button-focus-outline: none;
+                width: 100%;
+                min-height: 44px;
+                justify-content: flex-start;
+                gap: 0.5em;
                 margin-bottom: 0.25em;
             }
 
             kc-ui-button:last-child {
                 margin-bottom: 0;
+            }
+
+            kc-ui-button::part(base):focus-visible {
+                outline-offset: -2px;
             }
 
             ::slotted(kc-ui-activity) {
@@ -123,6 +137,7 @@ export class KCUIActivitySideBarElement extends KCUIElement {
                         name="${name?.toLowerCase()}"
                         title="${name}"
                         icon=${icon}>
+                        ${name}
                     </kc-ui-button>
                 ` as HTMLElement,
             );

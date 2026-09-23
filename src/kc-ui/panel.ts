@@ -47,13 +47,18 @@ export class KCUIPanelTitleElement extends KCUIElement {
             :host {
                 flex: 0;
                 width: 100%;
+                box-sizing: border-box;
+                min-height: 2.6rem;
                 text-align: left;
-                padding: 0.2em 0.8em 0.2em 0.4em;
+                padding: 0.55em 0.75em;
                 display: flex;
                 align-items: center;
                 background: var(--panel-title-bg);
                 color: var(--panel-title-fg);
                 border-top: var(--panel-title-border);
+                border-bottom: var(--panel-title-border);
+                font-weight: 600;
+                line-height: 1.25;
                 user-select: none;
             }
 
@@ -62,8 +67,10 @@ export class KCUIPanelTitleElement extends KCUIElement {
             }
 
             div.actions {
-                flex: 0 1;
+                flex: 0 0 auto;
                 display: flex;
+                align-items: center;
+                gap: 0.25em;
                 flex-direction: row;
                 /* cheeky hack to work around scrollbar causing placement to be off. */
                 padding-right: 6px;
@@ -86,17 +93,20 @@ export class KCUIPanelBodyElement extends KCUIElement {
         ...KCUIElement.styles,
         css`
             :host {
+                box-sizing: border-box;
                 width: 100%;
+                min-width: 0;
                 min-height: 0;
                 overflow-y: auto;
                 overflow-x: hidden;
-                flex: 1 0;
+                flex: 1 1 auto;
+                padding: 0.45em 0.6em;
                 font-weight: 300;
                 font-size: 1em;
             }
 
             :host([padded]) {
-                padding: 0.1em 0.8em 0.1em 0.4em;
+                padding: 0.65em 0.75em;
             }
         `,
     ];
@@ -116,7 +126,10 @@ export class KCUIPanelLabelElement extends KCUIElement {
                 width: 100%;
                 display: flex;
                 flex-wrap: nowrap;
-                padding: 0.2em 0.3em;
+                padding: 0.35em 0.5em;
+                font-size: 0.85em;
+                font-weight: 600;
+                line-height: 1.25;
                 background: var(--panel-subtitle-bg);
                 color: var(--panel-subtitle-fg);
             }

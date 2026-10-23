@@ -8,10 +8,12 @@ import { html, query } from "../../../base/web-components";
 import {
     KCUIElement,
     KCUIFilteredListElement,
+    KCUIMenuElement,
     KCUITextFilterInputElement,
     type KCUIMenuItemElement,
 } from "../../../kc-ui";
 import { BoardViewer } from "../../../viewers/board/viewer";
+import { KiCanvasSelectEvent } from "../../../viewers/base/events";
 
 export class KCBoardNetsPanelElement extends KCUIElement {
     viewer: BoardViewer;
@@ -30,12 +32,29 @@ export class KCBoardNetsPanelElement extends KCUIElement {
 
             const number = parseInt(item?.name, 10);
 
-            if (!number) {
+            if (!Number.isFinite(number)) {
                 return;
             }
 
             this.viewer.highlight_net(number);
         });
+
+        this.addDisposable(
+            this.viewer.addEventListener(KiCanvasSelectEvent.type, () => {
+                this.menu.deselect();
+                const number = this.viewer.selected_net;
+                const selected =
+                    number === null
+                        ? null
+                        : this.menu.item_by_name(String(number));
+                if (selected) {
+                    this.search_input_elm.value = "";
+                    this.item_filter_elem.filter_text = null;
+                    selected.selected = true;
+                    selected.scrollIntoView({ block: "nearest" });
+                }
+            }),
+        );
 
         // Wire up search to filter the list
         this.search_input_elm.addEventListener("input", (e) => {
@@ -43,6 +62,9 @@ export class KCBoardNetsPanelElement extends KCUIElement {
                 this.search_input_elm.value ?? null;
         });
     }
+
+    @query("kc-ui-menu", true)
+    private menu!: KCUIMenuElement;
 
     @query("kc-ui-text-filter-input", true)
     private search_input_elm!: KCUITextFilterInputElement;

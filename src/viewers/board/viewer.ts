@@ -4,6 +4,8 @@
     Full text available at: https://opensource.org/licenses/MIT
 */
 
+import { later } from "../../base/async";
+import { no_self_recursion } from "../../base/functions";
 import { BBox, Vec2 } from "../../base/math";
 import { is_string } from "../../base/types";
 import { Color, Polygon, Polyline, Renderer } from "../../graphics";
@@ -12,12 +14,18 @@ import type { BoardTheme } from "../../kicad";
 import * as kicad_common from "../../kicad/common";
 import * as board_items from "../../kicad/board";
 import { DocumentViewer } from "../base/document-viewer";
+import { KiCanvasSelectEvent } from "../base/events";
 import {
     LayoutAnimationController,
     LayoutTimeline,
     base_layer_name,
 } from "./animation";
-import { LayerNames, LayerSet, ViewLayer } from "./layers";
+import {
+    copper_layers_between,
+    LayerNames,
+    LayerSet,
+    ViewLayer,
+} from "./layers";
 import {
     BoardPainter,
     type BoardObjectType,
@@ -41,6 +49,57 @@ export class BoardViewer extends DocumentViewer<
 > {
     #contextMenuCallback: ContextMenuCallback | null = null;
     #export_bbox: BBox | null = null;
+    #selected_bbox: BBox | null = null;
+    #selected_net: number | null = null;
+
+    get selected_net(): number | null {
+        return this.#selected_net;
+    }
+
+    override get selected(): BBox | null {
+        return this.#selected_bbox;
+    }
+
+    override set selected(bbox: BBox | null) {
+        const footprint = bbox?.context;
+        if (footprint instanceof board_items.Footprint) {
+            this.activate_selection_layer(footprint.layer);
+        }
+        if (!bbox) {
+            this.layers.highlight(null);
+        }
+        this.set_selection(bbox, null);
+    }
+
+    @no_self_recursion
+    private set_selection(bbox: BBox | null, net: number | null) {
+        const previous =
+            this.#selected_net === null
+                ? this.#selected_bbox?.context
+                : this.board.nets.find(
+                      (item) => item.number === this.#selected_net,
+                  );
+        this.#selected_bbox = bbox?.copy() ?? null;
+        this.#selected_net = net;
+        this.dispatchEvent(
+            new KiCanvasSelectEvent({
+                item:
+                    net === null
+                        ? this.#selected_bbox?.context
+                        : this.board.nets.find((item) => item.number === net),
+                previous,
+            }),
+        );
+        later(() => this.paint_selected());
+    }
+
+    private activate_selection_layer(name: string) {
+        const layer = this.layers.by_name(name);
+        if (layer) {
+            layer.visible = true;
+            this.layers.highlight(layer);
+        }
+    }
     #track_opacity = 1;
     #via_opacity = 1;
     #zone_opacity = 1;
@@ -75,6 +134,11 @@ export class BoardViewer extends DocumentViewer<
     }
 
     protected override paint_selected() {
+        if (this.#selected_net !== null) {
+            this.painter.paint_net(this.board, this.#selected_net);
+            this.draw();
+            return;
+        }
         const layer = this.layers.overlay;
         layer.clear();
         if (this.selected || this.#export_bbox) {
@@ -265,8 +329,62 @@ export class BoardViewer extends DocumentViewer<
     }
 
     highlight_net(net: number) {
-        this.painter.paint_net(this.board, net);
-        this.draw();
+        if (!this.board.nets.some((item) => item.number === net)) {
+            return;
+        }
+        const contains_net = (name: string) => {
+            const matches = (layers: string[]) =>
+                layers.includes(name) ||
+                layers.includes("*.Cu") ||
+                (layers.includes("F&B.Cu") &&
+                    (name === LayerNames.f_cu || name === LayerNames.b_cu));
+            return (
+                this.board.segments.some(
+                    (item) => item.net === net && item.layer === name,
+                ) ||
+                this.board.vias.some((item) => {
+                    if (item.net !== net) return false;
+                    if (!item.layers?.length) return true;
+                    for (const layer of copper_layers_between(
+                        item.layers[0]!,
+                        item.layers[1]!,
+                    )) {
+                        if (layer === name) return true;
+                    }
+                    return false;
+                }) ||
+                this.board.zones.some(
+                    (item) =>
+                        item.net === net &&
+                        matches(item.layers ?? [item.layer]),
+                ) ||
+                this.board.footprints.some(
+                    (footprint) =>
+                        footprint.pads.some(
+                            (pad) =>
+                                pad.net?.number === net && matches(pad.layers),
+                        ) ||
+                        footprint.zones.some(
+                            (item) =>
+                                item.net === net &&
+                                matches(item.layers ?? [item.layer]),
+                        ),
+                )
+            );
+        };
+        let first: ViewLayer | undefined;
+        let current: ViewLayer | undefined;
+        for (const layer of this.layers.copper_layers()) {
+            if (!contains_net(layer.name)) continue;
+            first ??= layer;
+            if (layer.highlighted) {
+                current = layer;
+                break;
+            }
+        }
+        const layer = current ?? first;
+        if (layer) this.activate_selection_layer(layer.name);
+        this.set_selection(null, net);
     }
 
     private set_layers_opacity(

@@ -26,7 +26,10 @@ export class KCBoardPropertiesPanelElement extends KCUIElement {
     private setup_events() {
         this.addDisposable(
             this.viewer.addEventListener(KiCanvasSelectEvent.type, (e) => {
-                this.selected_item = e.detail.item as Footprint;
+                this.selected_item =
+                    e.detail.item instanceof Footprint
+                        ? e.detail.item
+                        : undefined;
                 this.update();
             }),
         );

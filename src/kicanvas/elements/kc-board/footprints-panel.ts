@@ -55,8 +55,15 @@ export class KCBoardFootprintsPanelElement extends KCUIElement {
         // selection changes.
         this.addDisposable(
             this.viewer.addEventListener(KiCanvasSelectEvent.type, () => {
-                this.menu.selected =
-                    this.viewer.selected?.context.uuid_text ?? null;
+                const name = this.viewer.selected?.context.unique_id ?? null;
+                this.menu.deselect();
+                const selected = name ? this.menu.item_by_name(name) : null;
+                if (selected) {
+                    this.search_input_elm.value = "";
+                    this.item_filter_elem.filter_text = null;
+                    selected.selected = true;
+                    selected.scrollIntoView({ block: "nearest" });
+                }
             }),
         );
 

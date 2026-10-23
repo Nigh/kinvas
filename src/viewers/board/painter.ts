@@ -140,7 +140,7 @@ class LinePainter extends GraphicItemPainter {
     }
 
     paint(layer: ViewLayer, s: board_items.GrLine | board_items.FpLine) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         const points = [s.start, s.end];
         this.styled_line(points, s.width, layer.color, s.stroke_params);
@@ -155,7 +155,7 @@ class RectPainter extends GraphicItemPainter {
     }
 
     paint(layer: ViewLayer, r: board_items.GrRect | board_items.FpRect) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         const color = layer.color;
 
@@ -182,7 +182,7 @@ class PolyPainter extends GraphicItemPainter {
         layer: ViewLayer,
         p: board_items.Poly | board_items.GrPoly | board_items.FpPoly,
     ) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         const color = layer.color;
 
@@ -209,7 +209,7 @@ class ArcPainter extends GraphicItemPainter {
     }
 
     paint(layer: ViewLayer, a: board_items.GrArc | board_items.FpArc) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         const arc = a.arc;
         const points = arc.to_polyline();
@@ -226,7 +226,7 @@ class CirclePainter extends GraphicItemPainter {
     }
 
     paint(layer: ViewLayer, c: board_items.GrCircle | board_items.FpCircle) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         const color = layer.color;
 
@@ -259,7 +259,7 @@ class TraceSegmentPainter extends NetNameItemPainter {
     }
 
     paint(layer: ViewLayer, s: board_items.LineSegment) {
-        if (this.filter_net && s.net != this.filter_net) {
+        if (this.filter_net !== null && s.net != this.filter_net) {
             return;
         }
 
@@ -276,7 +276,7 @@ class TraceArcPainter extends NetNameItemPainter {
     }
 
     paint(layer: ViewLayer, a: board_items.ArcSegment) {
-        if (this.filter_net && a.net != this.filter_net) {
+        if (this.filter_net !== null && a.net != this.filter_net) {
             return;
         }
 
@@ -319,7 +319,7 @@ class ViaPainter extends NetNameItemPainter {
     }
 
     paint(layer: ViewLayer, v: board_items.Via) {
-        if (this.filter_net && v.net != this.filter_net) {
+        if (this.filter_net !== null && v.net != this.filter_net) {
             return;
         }
 
@@ -379,7 +379,7 @@ class ZonePainter extends BoardItemPainter {
     }
 
     paint(layer: ViewLayer, z: board_items.Zone) {
-        if (this.filter_net && z.net != this.filter_net) {
+        if (this.filter_net !== null && z.net != this.filter_net) {
             return;
         }
 
@@ -456,12 +456,12 @@ class PadPainter extends NetNameItemPainter {
         return layers;
     }
 
-    paint(layer: ViewLayer, pad: board_items.Pad) {
-        if (this.filter_net && pad.net?.number != this.filter_net) {
+    paint(layer: ViewLayer, pad: board_items.Pad, netname_only = false) {
+        if (this.filter_net !== null && pad.net?.number != this.filter_net) {
             return;
         }
 
-        const color = layer.color;
+        const color = netname_only ? Color.black : layer.color;
 
         const position_mat = Matrix3.translation(
             pad.at.position.x,
@@ -484,9 +484,12 @@ class PadPainter extends NetNameItemPainter {
         const is_netname_layer =
             layer_name == LayerNames.pads_front_netname ||
             layer_name == LayerNames.pads_back_netname ||
-            layer_name == LayerNames.pad_holes_netname;
+            layer_name == LayerNames.pad_holes_netname ||
+            netname_only;
 
-        const net_name = PadPainter.pad_netname(pad);
+        const net_name = netname_only
+            ? pad.netname
+            : PadPainter.pad_netname(pad);
 
         if (is_netname_layer) {
             // See also:
@@ -714,6 +717,16 @@ class PadPainter extends NetNameItemPainter {
         }
 
         this.gfx.state.pop();
+
+        // Overlay pads have no virtual netname layer, including connect pads.
+        // Draw full names in contrast after the highlighted copper geometry.
+        if (
+            layer_name == ViewLayerNames.overlay &&
+            this.filter_net !== null &&
+            !netname_only
+        ) {
+            this.paint(layer, pad, true);
+        }
     }
 
     // Get displayed netname for a pad, if it's no_connect, return "X"
@@ -758,7 +771,7 @@ class GrTextPainter extends BoardItemPainter {
     }
 
     paint(layer: ViewLayer, t: board_items.GrText) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         if (t.hide || !t.shown_text) {
             return;
@@ -808,7 +821,7 @@ class FpTextPainter extends BoardItemPainter {
     }
 
     paint(layer: ViewLayer, t: board_items.FpText) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         if (t.hide || !t.shown_text) {
             return;
@@ -870,7 +883,7 @@ class PropertyTextPainter extends BoardItemPainter {
     }
 
     paint(layer: ViewLayer, t: board_items.SymbolProperty) {
-        if (this.filter_net) return;
+        if (this.filter_net !== null) return;
 
         if (t.hide || !t.shown_text || !t.has_symbol_prop) {
             return;

@@ -62,6 +62,18 @@ You can disable specific controls and panels using `controlslist`. This example 
 
 <kicanvas-embed src="/examples/simple.kicad_sch" controls="basic" controlslist="nodownload"></kicanvas-embed>
 
+#### PCB selection
+
+With full controls, selecting a footprint or net in the sidebar focuses its
+board layer and highlights the selection. A net keeps the focused copper layer
+when that layer contains the net; otherwise, the viewer focuses a copper layer
+that contains it.
+
+Selecting a footprint or net on the board opens the matching sidebar panel,
+reveals the selected list item, and highlights it. Selecting a net also displays
+its full name on its pads and in a tooltip that follows the pointer over the
+board. Clicking empty board space clears the selection.
+
 ### Deep linking
 
 !!! warning "Not yet implemented"

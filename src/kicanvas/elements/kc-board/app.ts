@@ -6,6 +6,8 @@
 
 import { html } from "../../../base/web-components";
 import { KicadPCB } from "../../../kicad";
+import { Footprint } from "../../../kicad/board";
+import { Net } from "../../../kicad/common";
 import type { ProjectPage } from "../../project";
 import { KCViewerAppElement } from "../common/app";
 import { KCBoardViewerElement } from "./viewer";
@@ -30,10 +32,11 @@ import "./viewer";
  * basically KiCanvas's version of PCBNew.
  */
 export class KCBoardAppElement extends KCViewerAppElement<KCBoardViewerElement> {
-    override on_viewer_select(item?: unknown, previous?: unknown) {
-        // Selecting the same item twice should show the properties panel.
-        if (item && item == previous) {
-            this.change_activity("properties");
+    override on_viewer_select(item?: unknown) {
+        if (item instanceof Footprint) {
+            this.change_activity("footprints");
+        } else if (item instanceof Net) {
+            this.change_activity("nets");
         }
     }
 

@@ -5,10 +5,10 @@
 */
 
 import { type Theme } from "../../kicad";
-import witch_hazel from "./witch-hazel";
+import xianii from "./xianii";
 import kicad_default from "./kicad-default";
 
-const themes = [witch_hazel, kicad_default];
+const themes = [kicad_default, xianii];
 const themes_by_name = new Map(
     themes.map((v) => {
         return [v.name, v];
